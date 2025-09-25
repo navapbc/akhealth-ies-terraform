@@ -218,6 +218,28 @@ resource "azurerm_container_registry" "this" {
     identity_ids = []
   }
 }
+
+resource "azurerm_role_assignment" "acrDataPlanPush" {
+  scope                = azurerm_container_registry.this.id
+  role_definition_name = "AcrPush"
+  principal_id         = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b" //secgrp-akies-dev-acradmin-001
+  principal_type       = "Group"
+}
+
+resource "azurerm_role_assignment" "acrDataPlanDelete" {
+  scope                = azurerm_container_registry.this.id
+  role_definition_name = "AcrDelete"
+  principal_id         = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b" //secgrp-akies-dev-acradmin-001
+  principal_type       = "Group"
+}
+
+resource "azurerm_role_assignment" "acrControlPlanRole" {
+  scope                = azurerm_container_registry.this.id
+  role_definition_name = "Container Registry Contributor and Data Access Configuration Administrator"
+  principal_id         = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b" //secgrp-akies-dev-acradmin-001
+  principal_type       = "Group"
+}
+
 //END: ACR and ACR Dependency Creation
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -296,3 +318,4 @@ resource "azurerm_postgresql_flexible_server_active_directory_administrator" "pg
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
+
