@@ -44,28 +44,29 @@ module "naming" {
   version = "0.3.0"
 }
 
-resource "azurerm_resource_group" "this" {
+resource "azurerm_resource_group" "defaultResourceGroup" {
   location = "eastus"
   name     = module.naming.resource_group.name_unique
 }
 
-resource "azurerm_virtual_network" "this" {
-  location            = azurerm_resource_group.this.location
+resource "azurerm_virtual_network" "defaultVirtualNetwork" {
+  location            = azurerm_resource_group.defaultResourceGroup.location
   name                = module.naming.virtual_network.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-  address_space       = ["192.168.0.0/24"]
+  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
+  address_space       = ["10.0.0.0/21"]
 }
 //END: Shared Resources
 
 //START: ACI and ACI Dependency Creation
 
 
-resource "azurerm_subnet" "this" {
-  address_prefixes                = ["192.168.0.0/24"]
+resource "azurerm_subnet" "containerGroupSubnet" {
+  address_prefixes                = ["10.0.0.128/25"]
   name                            = module.naming.subnet.name_unique
-  resource_group_name             = azurerm_resource_group.this.name
-  virtual_network_name            = azurerm_virtual_network.this.name
+  resource_group_name             = azurerm_resource_group.defaultResourceGroup.name
+  virtual_network_name            = azurerm_virtual_network.defaultVirtualNetwork.name
   default_outbound_access_enabled = true
+  depends_on                      = [azurerm_virtual_network.defaultVirtualNetwork]
 
   delegation {
     name = "delegation"
@@ -78,26 +79,19 @@ resource "azurerm_subnet" "this" {
 }
 
 
-resource "azurerm_log_analytics_workspace" "this" {
-  location                   = azurerm_resource_group.this.location
+resource "azurerm_log_analytics_workspace" "defaultLogAnalyticsWorkspace" {
+  location                   = azurerm_resource_group.defaultResourceGroup.location
   name                       = module.naming.log_analytics_workspace.name_unique
-  resource_group_name        = azurerm_resource_group.this.name
+  resource_group_name        = azurerm_resource_group.defaultResourceGroup.name
   internet_ingestion_enabled = false
   internet_query_enabled     = false
   sku                        = "PerGB2018"
 }
 
-resource "azurerm_user_assigned_identity" "this" {
-  location            = azurerm_resource_group.this.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.this.name
-}
-
-
 resource "azurerm_key_vault" "keyvault" {
-  location                      = azurerm_resource_group.this.location
+  location                      = azurerm_resource_group.defaultResourceGroup.location
   name                          = module.naming.key_vault.name_unique
-  resource_group_name           = azurerm_resource_group.this.name
+  resource_group_name           = azurerm_resource_group.defaultResourceGroup.name
   sku_name                      = "standard"
   tenant_id                     = data.azurerm_client_config.current.tenant_id
   public_network_access_enabled = true
@@ -124,13 +118,20 @@ resource "azurerm_key_vault_secret" "secret" {
   depends_on = [azurerm_role_assignment.current]
 }
 
-module "test" {
-  source = "../../"
+moved {
+  from = module.test
+  to   = module.containerGroupInstance
+}
 
-  location            = azurerm_resource_group.this.location
+module "containerGroupInstance" {
+
+  source     = "../../"
+  depends_on = [azurerm_resource_group.defaultResourceGroup]
+
+  location            = azurerm_resource_group.defaultResourceGroup.location
   name                = module.naming.container_group.name_unique
   os_type             = "Linux"
-  resource_group_name = azurerm_resource_group.this.name
+  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
   restart_policy      = "Always"
   containers = {
     container1 = {
@@ -169,8 +170,8 @@ module "test" {
     }
   }
   diagnostics_log_analytics = {
-    workspace_id  = azurerm_log_analytics_workspace.this.workspace_id
-    workspace_key = azurerm_log_analytics_workspace.this.primary_shared_key
+    workspace_id  = azurerm_log_analytics_workspace.defaultLogAnalyticsWorkspace.workspace_id
+    workspace_key = azurerm_log_analytics_workspace.defaultLogAnalyticsWorkspace.primary_shared_key
   }
   exposed_ports = [
     {
@@ -178,10 +179,11 @@ module "test" {
       protocol = "TCP"
     }
   ]
+
   managed_identities = {
-    system_assigned            = true
-    user_assigned_resource_ids = [azurerm_user_assigned_identity.this.id]
+    system_assigned = true
   }
+
   priority = "Regular"
   role_assignments = {
     role_assignment_1 = {
@@ -190,7 +192,7 @@ module "test" {
       skip_service_principal_aad_check = false
     }
   }
-  subnet_ids = [azurerm_subnet.this.id]
+  subnet_ids = [azurerm_subnet.containerGroupSubnet.id]
   tags       = {}
   zones      = ["1"]
 }
@@ -200,58 +202,77 @@ module "test" {
 //START: ACR and ACR Dependency Creation
 resource "azurerm_private_dns_zone" "this" {
   name                = "privatelink.azurecr.io"
-  resource_group_name = azurerm_resource_group.this.name
+  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
 }
 
 resource "azurerm_container_registry" "this" {
   location                      = "eastus"
   name                          = "acrsysdev001"
-  resource_group_name           = azurerm_resource_group.this.name
+  resource_group_name           = azurerm_resource_group.defaultResourceGroup.name
   sku                           = "Premium" //required for private networking configs
   public_network_access_enabled = false
 }
 //END: ACR and ACR Dependency Creation
 
 //START: PGSQL and PGSQL Dependency Creation
-resource "azurerm_postgresql_flexible_server" "this" {
-  location               = "eastus"
-  name                   = "psql-sys-dev-eus-001"
-  resource_group_name    = azurerm_resource_group.this.name
-  administrator_login    = "psqladmin"
-  administrator_password = "DBadmin123!"
+# This ensures we have unique CAF compliant names for our resources.
+module "pgsqlNaming" {
+  source  = "Azure/naming/azurerm"
+  version = "0.3.0"
+}
+resource "azurerm_subnet" "pgsqlSubnet" {
+  address_prefixes                = ["10.0.1.0/25"]
+  name                            = module.pgsqlNaming.subnet.name_unique
+  resource_group_name             = azurerm_resource_group.defaultResourceGroup.name
+  virtual_network_name            = azurerm_virtual_network.defaultVirtualNetwork.name
+  default_outbound_access_enabled = false
 
+  delegation {
+    name = "delegation"
 
-  delegated_subnet_id = var.delegated_subnet_id
-
-
-  private_dns_zone_id           = var.private_dns_zone_id
-  public_network_access_enabled = false
-
-  sku_name = var.sku_name
-
-  storage_mb   = var.storage_mb
-  storage_tier = var.storage_tier
-
-  version = var.server_version
-  zone    = var.zone
-
-
-  dynamic "authentication" {
-    for_each = var.authentication == null ? [] : [var.authentication]
-
-    content {
-      active_directory_auth_enabled = authentication.value.active_directory_auth_enabled
-      password_auth_enabled         = authentication.value.password_auth_enabled
-      tenant_id                     = authentication.value.tenant_id
+    service_delegation {
+      name    = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
     }
   }
 }
+resource "azurerm_private_dns_zone" "pgsqlPrivateDNSZone" {
+  name                = "private.postgres.database.azure.com"
+  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
+}
 
-resource "azurerm_postgresql_flexible_server_virtual_endpoint" "this" {
-  for_each = var.virtual_endpoint
 
-  name              = each.value.name
-  replica_server_id = each.value.replica_server_id
-  source_server_id  = azurerm_postgresql_flexible_server.this.id
-  type              = each.value.type
+resource "azurerm_postgresql_flexible_server" "pgsqlFlexibleServer" {
+  depends_on          = [azurerm_subnet.pgsqlSubnet, azurerm_private_dns_zone.pgsqlPrivateDNSZone]
+  location            = "eastus"
+  name                = "psql-sys-dev-eus-001-test6"
+  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
+  //private_dns_zone_id = azurerm_private_dns_zone.pgsqlPrivateDNSZone.id
+  authentication {
+    active_directory_auth_enabled = true
+    password_auth_enabled         = false
+    tenant_id                     = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
+    
+  }
+
+
+  //delegated_subnet_id = azurerm_subnet.pgsqlSubnet.id
+  public_network_access_enabled = true
+
+  sku_name = "B_Standard_B1ms"
+
+  storage_mb   = "131072"
+  storage_tier = "P10"
+
+  version = 16
+}
+
+resource "azurerm_postgresql_flexible_server_active_directory_administrator" "pgsqlAdmin" {
+  depends_on = [ azurerm_postgresql_flexible_server.pgsqlFlexibleServer ]
+  tenant_id = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
+  server_name         = azurerm_postgresql_flexible_server.pgsqlFlexibleServer.name
+  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
+  principal_type      = "Group"            # or User / ServicePrincipal
+  principal_name      = "secgrp-akies-dev-dbadmin-001" # display name / UPN
+  object_id           = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b"  # GUID
 }

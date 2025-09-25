@@ -54,3 +54,5 @@ examples/private/.terraform/providers/registry.terraform.io/hashicorp/local/2.5.
 examples/private/.terraform/providers/registry.terraform.io/hashicorp/random/3.7.2/darwin_arm64/terraform-provider-random_v3.7.2_x5
 examples/private/.terraform/providers/registry.terraform.io/azure/azapi/2.6.1/darwin_arm64/terraform-provider-azapi_v2.6.1
 .terraform/providers/registry.terraform.io/hashicorp/random/3.7.2/darwin_arm64/terraform-provider-random_v3.7.2_x5
+examples/private/.terraform/modules/modules.json
+examples/private/.terraform/modules/regions
