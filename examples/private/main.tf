@@ -30,7 +30,11 @@ provider "azurerm" {
   subscription_id = "dec9c331-d773-4f77-a5a8-39e95699c4a5"
   tenant_id       = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
 }
-
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 //START: Shared Resources
 data "azurerm_client_config" "current" {}
 module "regions" {
@@ -56,10 +60,12 @@ resource "azurerm_virtual_network" "defaultVirtualNetwork" {
   address_space       = ["10.0.0.0/21"]
 }
 //END: Shared Resources
-
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 //START: ACI and ACI Dependency Creation
-
-
 resource "azurerm_subnet" "containerGroupSubnet" {
   address_prefixes                = ["10.0.0.128/25"]
   name                            = module.naming.subnet.name_unique
@@ -116,11 +122,6 @@ resource "azurerm_key_vault_secret" "secret" {
   value           = "password123"
 
   depends_on = [azurerm_role_assignment.current]
-}
-
-moved {
-  from = module.test
-  to   = module.containerGroupInstance
 }
 
 module "containerGroupInstance" {
@@ -198,7 +199,11 @@ module "containerGroupInstance" {
 }
 
 //END: ACI and ACI Dependency Creation
-
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 //START: ACR and ACR Dependency Creation
 resource "azurerm_private_dns_zone" "this" {
   name                = "privatelink.azurecr.io"
@@ -211,15 +216,24 @@ resource "azurerm_container_registry" "this" {
   resource_group_name           = azurerm_resource_group.defaultResourceGroup.name
   sku                           = "Premium" //required for private networking configs
   public_network_access_enabled = false
+  identity {
+    type         = "SystemAssigned"
+    identity_ids = []
+  }
 }
 //END: ACR and ACR Dependency Creation
-
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 //START: PGSQL and PGSQL Dependency Creation
 # This ensures we have unique CAF compliant names for our resources.
 module "pgsqlNaming" {
   source  = "Azure/naming/azurerm"
   version = "0.3.0"
 }
+
 resource "azurerm_subnet" "pgsqlSubnet" {
   address_prefixes                = ["10.0.1.0/25"]
   name                            = module.pgsqlNaming.subnet.name_unique
@@ -247,15 +261,18 @@ resource "azurerm_postgresql_flexible_server" "pgsqlFlexibleServer" {
   location            = "eastus"
   name                = "psql-sys-dev-eus-001-test6"
   resource_group_name = azurerm_resource_group.defaultResourceGroup.name
+  zone                = 1
   //private_dns_zone_id = azurerm_private_dns_zone.pgsqlPrivateDNSZone.id
+  identity {
+    type         = "SystemAssigned"
+    identity_ids = []
+  }
   authentication {
     active_directory_auth_enabled = true
     password_auth_enabled         = false
     tenant_id                     = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
-    
+
   }
-
-
   //delegated_subnet_id = azurerm_subnet.pgsqlSubnet.id
   public_network_access_enabled = true
 
@@ -268,11 +285,11 @@ resource "azurerm_postgresql_flexible_server" "pgsqlFlexibleServer" {
 }
 
 resource "azurerm_postgresql_flexible_server_active_directory_administrator" "pgsqlAdmin" {
-  depends_on = [ azurerm_postgresql_flexible_server.pgsqlFlexibleServer ]
-  tenant_id = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
+  depends_on          = [azurerm_postgresql_flexible_server.pgsqlFlexibleServer]
+  tenant_id           = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
   server_name         = azurerm_postgresql_flexible_server.pgsqlFlexibleServer.name
   resource_group_name = azurerm_resource_group.defaultResourceGroup.name
-  principal_type      = "Group"            # or User / ServicePrincipal
-  principal_name      = "secgrp-akies-dev-dbadmin-001" # display name / UPN
-  object_id           = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b"  # GUID
+  principal_type      = "Group"                                # or User / ServicePrincipal
+  principal_name      = "secgrp-akies-dev-dbadmin-001"         # display name / UPN
+  object_id           = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b" # GUID
 }
