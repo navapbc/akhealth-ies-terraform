@@ -84,7 +84,6 @@ resource "azurerm_subnet" "containerGroupSubnet" {
   }
 }
 
-
 resource "azurerm_log_analytics_workspace" "defaultLogAnalyticsWorkspace" {
   location                   = azurerm_resource_group.defaultResourceGroup.location
   name                       = module.naming.log_analytics_workspace.name_unique
@@ -125,7 +124,6 @@ resource "azurerm_key_vault_secret" "secret" {
 }
 
 module "containerGroupInstance" {
-
   source     = "../../"
   depends_on = [azurerm_resource_group.defaultResourceGroup]
 
@@ -197,7 +195,6 @@ module "containerGroupInstance" {
   tags       = {}
   zones      = ["1"]
 }
-
 //END: ACI and ACI Dependency Creation
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -293,3 +290,9 @@ resource "azurerm_postgresql_flexible_server_active_directory_administrator" "pg
   principal_name      = "secgrp-akies-dev-dbadmin-001"         # display name / UPN
   object_id           = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b" # GUID
 }
+//END: PGSQL and PGSQL Dependency Creation
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
