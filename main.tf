@@ -61,6 +61,85 @@ resource "azurerm_virtual_network" "defaultVirtualNetwork" {
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
+//START: PGSQL and PGSQL Dependency Creation
+# This ensures we have unique CAF compliant names for our resources.
+module "pgsqlNaming" {
+  source  = "Azure/naming/azurerm"
+  version = "0.3.0"
+}
+
+resource "azurerm_subnet" "pgsqlSubnet" {
+  address_prefixes                = ["10.0.1.0/25"]
+  name                            = module.pgsqlNaming.subnet.name_unique
+  resource_group_name             = azurerm_resource_group.defaultResourceGroup.name
+  virtual_network_name            = azurerm_virtual_network.defaultVirtualNetwork.name
+  default_outbound_access_enabled = false
+
+  delegation {
+    name = "delegation"
+
+    service_delegation {
+      name    = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+    }
+  }
+}
+
+/*resource "azurerm_private_dns_zone" "pgsqlPrivateDNSZone" {
+  name                = "private.postgres.database.azure.com"
+  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
+}*/
+
+resource "azurerm_postgresql_flexible_server" "pgsqlFlexibleServer" {
+  depends_on          = [azurerm_subnet.pgsqlSubnet]
+  location            = "eastus"
+  name                = "psql-sys-dev-eus-001-test6"
+  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
+  zone                = 1
+  //private_dns_zone_id = azurerm_private_dns_zone.pgsqlPrivateDNSZone.id
+  identity {
+    type         = "SystemAssigned"
+    identity_ids = []
+  }
+  authentication {
+    active_directory_auth_enabled = true
+    password_auth_enabled         = false
+    tenant_id                     = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
+
+  }
+  //delegated_subnet_id = azurerm_subnet.pgsqlSubnet.id
+  public_network_access_enabled = true
+
+  sku_name = "B_Standard_B1ms"
+
+  storage_mb   = "131072"
+  storage_tier = "P10"
+
+  version = 16
+}
+
+/*resource "azurerm_role_assignment" "pgsqlOwner" {
+  scope                = azurerm_postgresql_flexible_server.pgsqlFlexibleServer.id
+  role_definition_name = "Owner"
+  principal_id         = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b" //secgrp-akies-dev-dbadmin-001
+  principal_type       = "Group"
+}*/
+
+resource "azurerm_postgresql_flexible_server_active_directory_administrator" "pgsqlAdmin" {
+  depends_on          = [azurerm_postgresql_flexible_server.pgsqlFlexibleServer]
+  tenant_id           = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
+  server_name         = azurerm_postgresql_flexible_server.pgsqlFlexibleServer.name
+  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
+  principal_type      = "Group"
+  principal_name      = "secgrp-akies-dev-dbadmin-001"
+  object_id           = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b" //secgrp-akies-dev-dbadmin-001
+}
+//END: PGSQL and PGSQL Dependency Creation
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 //START: ACR and ACR Dependency Creation
 resource "azurerm_private_dns_zone" "this" {
   name                = "privatelink.azurecr.io"
@@ -272,83 +351,5 @@ resource "azurerm_role_assignment" "defaultContainerInstanceRoleAssignment" {
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
-//START: PGSQL and PGSQL Dependency Creation
-# This ensures we have unique CAF compliant names for our resources.
-module "pgsqlNaming" {
-  source  = "Azure/naming/azurerm"
-  version = "0.3.0"
-}
 
-resource "azurerm_subnet" "pgsqlSubnet" {
-  address_prefixes                = ["10.0.1.0/25"]
-  name                            = module.pgsqlNaming.subnet.name_unique
-  resource_group_name             = azurerm_resource_group.defaultResourceGroup.name
-  virtual_network_name            = azurerm_virtual_network.defaultVirtualNetwork.name
-  default_outbound_access_enabled = false
-
-  delegation {
-    name = "delegation"
-
-    service_delegation {
-      name    = "Microsoft.DBforPostgreSQL/flexibleServers"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
-    }
-  }
-}
-
-resource "azurerm_private_dns_zone" "pgsqlPrivateDNSZone" {
-  name                = "private.postgres.database.azure.com"
-  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
-}
-
-resource "azurerm_postgresql_flexible_server" "pgsqlFlexibleServer" {
-  depends_on          = [azurerm_subnet.pgsqlSubnet, azurerm_private_dns_zone.pgsqlPrivateDNSZone]
-  location            = "eastus"
-  name                = "psql-sys-dev-eus-001-test6"
-  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
-  zone                = 1
-  //private_dns_zone_id = azurerm_private_dns_zone.pgsqlPrivateDNSZone.id
-  identity {
-    type         = "SystemAssigned"
-    identity_ids = []
-  }
-  authentication {
-    active_directory_auth_enabled = true
-    password_auth_enabled         = false
-    tenant_id                     = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
-
-  }
-  //delegated_subnet_id = azurerm_subnet.pgsqlSubnet.id
-  public_network_access_enabled = true
-
-  sku_name = "B_Standard_B1ms"
-
-  storage_mb   = "131072"
-  storage_tier = "P10"
-
-  version = 16
-}
-
-/*resource "azurerm_role_assignment" "pgsqlOwner" {
-  scope                = azurerm_postgresql_flexible_server.pgsqlFlexibleServer.id
-  role_definition_name = "Owner"
-  principal_id         = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b" //secgrp-akies-dev-dbadmin-001
-  principal_type       = "Group"
-}*/
-
-resource "azurerm_postgresql_flexible_server_active_directory_administrator" "pgsqlAdmin" {
-  depends_on          = [azurerm_postgresql_flexible_server.pgsqlFlexibleServer]
-  tenant_id           = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
-  server_name         = azurerm_postgresql_flexible_server.pgsqlFlexibleServer.name
-  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
-  principal_type      = "Group"
-  principal_name      = "secgrp-akies-dev-dbadmin-001"
-  object_id           = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b" //secgrp-akies-dev-dbadmin-001
-}
-//END: PGSQL and PGSQL Dependency Creation
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////
 
