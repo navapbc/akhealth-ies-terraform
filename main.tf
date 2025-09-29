@@ -151,7 +151,7 @@ resource "azurerm_container_registry" "this" {
   name                          = "acrsysdev001"
   resource_group_name           = azurerm_resource_group.defaultResourceGroup.name
   sku                           = "Premium" //required for private networking configs
-  public_network_access_enabled = false
+  public_network_access_enabled = true
   identity {
     type         = "SystemAssigned"
     identity_ids = []
@@ -303,6 +303,7 @@ resource "azurerm_container_group" "containerGroupInstance" {
       }
     }
   }
+  
 
 
 
@@ -338,9 +339,48 @@ resource "azurerm_container_group" "containerGroupInstance" {
 }
 
 resource "azurerm_role_assignment" "defaultContainerInstanceRoleAssignment" {
+  depends_on = [ azurerm_container_group.containerGroupInstance ]
   principal_id         = data.azurerm_client_config.current.object_id
-  scope                = azurerm_container_group.containerGroupInstance.id
+  scope                = azurerm_resource_group.defaultResourceGroup.id
+  principal_type = "User"
   role_definition_name = "Contributor"
+  skip_service_principal_aad_check = true
+}
+
+resource "azurerm_role_assignment" "aciAcrDataPlanPush" {
+  depends_on = [ azurerm_container_group.containerGroupInstance ]
+  scope                = azurerm_container_registry.this.id
+  role_definition_name = "AcrPush"
+  principal_id         = azurerm_container_group.containerGroupInstance.identity[0].principal_id
+  principal_type = "ServicePrincipal"
+  skip_service_principal_aad_check = true
+}
+
+resource "azurerm_role_assignment" "aciAcrDataPlanDelete" {
+  depends_on = [ azurerm_container_group.containerGroupInstance ]
+  scope                = azurerm_container_registry.this.id
+  role_definition_name = "AcrDelete"
+  principal_id         = azurerm_container_group.containerGroupInstance.identity[0].principal_id
+  principal_type = "ServicePrincipal"
+  skip_service_principal_aad_check = true
+}
+
+resource "azurerm_role_assignment" "aciAcrDataPlanPull" {
+  depends_on = [ azurerm_container_group.containerGroupInstance ]
+  scope                = azurerm_container_registry.this.id
+  role_definition_name = "AcrPull"
+  principal_id         = "${azurerm_container_group.containerGroupInstance.identity[0].principal_id}"
+  principal_type = "ServicePrincipal"
+  skip_service_principal_aad_check = true
+}
+
+resource "azurerm_role_assignment" "aciAcrControlPlanRole" {
+  depends_on = [ azurerm_container_group.containerGroupInstance ]
+  scope                = azurerm_container_registry.this.id
+  role_definition_name = "Container Registry Contributor and Data Access Configuration Administrator"
+  principal_id         = azurerm_container_group.containerGroupInstance.identity[0].principal_id
+  principal_type = "ServicePrincipal"
+  skip_service_principal_aad_check = true
 }
 
 
