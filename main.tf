@@ -152,6 +152,7 @@ resource "azurerm_container_registry" "this" {
   resource_group_name           = azurerm_resource_group.defaultResourceGroup.name
   sku                           = "Premium" //required for private networking configs
   public_network_access_enabled = true
+  admin_enabled                 = true
   identity {
     type         = "SystemAssigned"
     identity_ids = []
@@ -259,23 +260,29 @@ resource "azurerm_key_vault_secret" "secret" {
 }
 
 resource "azurerm_container_group" "containerGroupInstance" {
-  depends_on          = []
-  location            = "eastus"
-  name                = module.naming.container_group.name_unique
-  os_type             = "Linux"
-  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
-  ip_address_type     = "Private"
-  priority            = "Regular"
-  restart_policy      = "Always"
-  subnet_ids          = ["${azurerm_subnet.containerGroupSubnet.id}"]
-  tags                = {}
-  zones               = ["1"]
+  depends_on                  = [azurerm_container_registry.this]
+  location                    = "eastus"
+  name                        = module.naming.container_group.name_unique
+  os_type                     = "Linux"
+  resource_group_name         = azurerm_resource_group.defaultResourceGroup.name
+  ip_address_type             = "Private"
+  priority                    = "Regular"
+  restart_policy              = "Always"
+  subnet_ids                  = ["${azurerm_subnet.containerGroupSubnet.id}"]
+  tags                        = {}
+  zones                       = ["1"]
   dns_name_label_reuse_policy = "Unsecure"
 
-  container {
+  image_registry_credential {
+    server   = "acrsysdev001.azurecr.io"
+    username = "acrsysdev001"
+    password = "YlEceZidEke8TUVPaAgLpA6fqlADZtWv+TtarE9DGe+ACRClUe6B"
+  }
 
-    name   = "container1"
-    image  = "public.ecr.aws/docker/library/nginx:latest"
+   container {
+
+      name   = "container2"
+    image  = "acrsysdev001.azurecr.io/modexp-spring:v1"
     cpu    = 1
     memory = 2
 
@@ -287,6 +294,13 @@ resource "azurerm_container_group" "containerGroupInstance" {
       protocol = "TCP"
     }
 
+
+
+    ports {
+      port     = 443
+      protocol = "TCP"
+    }
+
     volume {
       mount_path = "/etc/secrets"
       name       = "secret1"
@@ -294,16 +308,7 @@ resource "azurerm_container_group" "containerGroupInstance" {
         "password" = base64encode("password123")
       }
     }
-
-    volume {
-      mount_path = "/usr/share/nginx/html"
-      name       = "nginx"
-      secret = {
-        "indexpage" = base64encode("Hello, World!")
-      }
-    }
   }
-  
 
 
 
@@ -323,14 +328,6 @@ resource "azurerm_container_group" "containerGroupInstance" {
     type = "SystemAssigned"
   }
 
-  //to be defined
-  /*image_registry_credential {
-      server                    = image_registry_credential.value.server
-      password                  = image_registry_credential.value.password
-      user_assigned_identity_id = image_registry_credential.value.user_assigned_identity_id
-      username                  = image_registry_credential.value.username
-    }*/
-
 
   timeouts {
     create = "2h"
@@ -339,47 +336,47 @@ resource "azurerm_container_group" "containerGroupInstance" {
 }
 
 resource "azurerm_role_assignment" "defaultContainerInstanceRoleAssignment" {
-  depends_on = [ azurerm_container_group.containerGroupInstance ]
-  principal_id         = data.azurerm_client_config.current.object_id
-  scope                = azurerm_resource_group.defaultResourceGroup.id
-  principal_type = "User"
-  role_definition_name = "Contributor"
+  depends_on                       = [azurerm_container_group.containerGroupInstance]
+  principal_id                     = data.azurerm_client_config.current.object_id
+  scope                            = azurerm_resource_group.defaultResourceGroup.id
+  principal_type                   = "User"
+  role_definition_name             = "Contributor"
   skip_service_principal_aad_check = true
 }
 
 resource "azurerm_role_assignment" "aciAcrDataPlanPush" {
-  depends_on = [ azurerm_container_group.containerGroupInstance ]
-  scope                = azurerm_container_registry.this.id
-  role_definition_name = "AcrPush"
-  principal_id         = azurerm_container_group.containerGroupInstance.identity[0].principal_id
-  principal_type = "ServicePrincipal"
+  depends_on                       = [azurerm_container_group.containerGroupInstance]
+  scope                            = azurerm_container_registry.this.id
+  role_definition_name             = "AcrPush"
+  principal_id                     = azurerm_container_group.containerGroupInstance.identity[0].principal_id
+  principal_type                   = "ServicePrincipal"
   skip_service_principal_aad_check = true
 }
 
 resource "azurerm_role_assignment" "aciAcrDataPlanDelete" {
-  depends_on = [ azurerm_container_group.containerGroupInstance ]
-  scope                = azurerm_container_registry.this.id
-  role_definition_name = "AcrDelete"
-  principal_id         = azurerm_container_group.containerGroupInstance.identity[0].principal_id
-  principal_type = "ServicePrincipal"
+  depends_on                       = [azurerm_container_group.containerGroupInstance]
+  scope                            = azurerm_container_registry.this.id
+  role_definition_name             = "AcrDelete"
+  principal_id                     = azurerm_container_group.containerGroupInstance.identity[0].principal_id
+  principal_type                   = "ServicePrincipal"
   skip_service_principal_aad_check = true
 }
 
 resource "azurerm_role_assignment" "aciAcrDataPlanPull" {
-  depends_on = [ azurerm_container_group.containerGroupInstance ]
-  scope                = azurerm_container_registry.this.id
-  role_definition_name = "AcrPull"
-  principal_id         = "${azurerm_container_group.containerGroupInstance.identity[0].principal_id}"
-  principal_type = "ServicePrincipal"
+  depends_on                       = [azurerm_container_group.containerGroupInstance]
+  scope                            = azurerm_container_registry.this.id
+  role_definition_name             = "AcrPull"
+  principal_id                     = azurerm_container_group.containerGroupInstance.identity[0].principal_id
+  principal_type                   = "ServicePrincipal"
   skip_service_principal_aad_check = true
 }
 
 resource "azurerm_role_assignment" "aciAcrControlPlanRole" {
-  depends_on = [ azurerm_container_group.containerGroupInstance ]
-  scope                = azurerm_container_registry.this.id
-  role_definition_name = "Container Registry Contributor and Data Access Configuration Administrator"
-  principal_id         = azurerm_container_group.containerGroupInstance.identity[0].principal_id
-  principal_type = "ServicePrincipal"
+  depends_on                       = [azurerm_container_group.containerGroupInstance]
+  scope                            = azurerm_container_registry.this.id
+  role_definition_name             = "Container Registry Contributor and Data Access Configuration Administrator"
+  principal_id                     = azurerm_container_group.containerGroupInstance.identity[0].principal_id
+  principal_type                   = "ServicePrincipal"
   skip_service_principal_aad_check = true
 }
 

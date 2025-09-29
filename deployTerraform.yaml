@@ -1,0 +1,111 @@
+name: Terraform Azure Deploy
+
+on:
+  workflow_dispatch:
+
+env:
+  TF_VERSION: 1.11.4
+  # Terraform Azurerm provider via OIDC (no secrets)
+  ARM_USE_OIDC: true
+  ARM_CLIENT_ID:        ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID:        ${{ secrets.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+  # Backend (adjust these for your state)
+  TF_BACKEND_RG:         akhealth-ies-terraform-tf
+  TF_BACKEND_STORAGE:    tfstfef5519ba84acf90f6f7
+  TF_BACKEND_CONTAINER:  backends
+  TF_BACKEND_KEY:        private/main.tfstate
+
+jobs:
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write     # required for OIDC
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: /
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Azure Login (OIDC, App Registration)
+        uses: azure/login@v2
+        with:
+          client-id:        ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id:        ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+
+      - name: Terraform Init (AzureRM backend w/ AAD)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${TF_BACKEND_RG}" \
+            -backend-config="storage_account_name=${TF_BACKEND_STORAGE}" \
+            -backend-config="container_name=${TF_BACKEND_CONTAINER}" \
+            -backend-config="key=${TF_BACKEND_KEY}" \
+            -backend-config="use_azuread_auth=true"
+        # If you can't grant RBAC on the storage, remove the last line and set:
+        # env:
+        #   ARM_ACCESS_KEY: ${{ secrets.TFSTATE_STORAGE_ACCOUNT_KEY }}
+
+      - name: Terraform Validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: infra/tfplan
+
+  apply:
+    name: Terraform Apply
+    needs: plan
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: development
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: /
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Azure Login (OIDC, App Registration)
+        uses: azure/login@v2
+        with:
+          client-id:        ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id:        ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id:  ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          # Fallback (client secret):
+          # creds: ${{ secrets.AZURE_CREDENTIALS_JSON }}
+
+
+      - name: Terraform Init (AzureRM backend w/ AAD)
+        run: |
+          terraform init \
+            -backend-config="resource_group_name=${TF_BACKEND_RG}" \
+            -backend-config="storage_account_name=${TF_BACKEND_STORAGE}" \
+            -backend-config="container_name=${TF_BACKEND_CONTAINER}" \
+            -backend-config="key=${TF_BACKEND_KEY}" \
+            -backend-config="use_azuread_auth=true"
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -input=false
