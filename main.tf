@@ -327,7 +327,6 @@ resource "azurerm_container_group" "containerGroupInstance" {
   }
 }
 
-//test change
 /*
 resource "azurerm_role_assignment" "defaultContainerInstanceRoleAssignment" {
   depends_on                       = [azurerm_container_group.containerGroupInstance]
