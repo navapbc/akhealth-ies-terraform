@@ -327,6 +327,7 @@ resource "azurerm_container_group" "containerGroupInstance" {
   }
 }
 
+/*
 resource "azurerm_role_assignment" "defaultContainerInstanceRoleAssignment" {
   depends_on                       = [azurerm_container_group.containerGroupInstance]
   principal_id                     = data.azurerm_client_config.current.object_id
@@ -371,7 +372,7 @@ resource "azurerm_role_assignment" "aciAcrControlPlanRole" {
   principal_type                   = "ServicePrincipal"
   skip_service_principal_aad_check = true
 }
-
+*/              
 
 
 //END: ACI and ACI Dependency Creation
