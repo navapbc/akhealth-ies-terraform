@@ -19,7 +19,7 @@ env:
 
 
 jobs:
-  tf:
+  Terraform:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
