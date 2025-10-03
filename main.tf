@@ -30,7 +30,7 @@ provider "azurerm" {
 //START: Shared Resources
 data "azurerm_client_config" "current" {}
 
-# This ensures we have unique CAF compliant names for our resources.
+# This ensures we have unique names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = "0.3.0"
@@ -54,7 +54,7 @@ resource "azurerm_virtual_network" "defaultVirtualNetwork" {
 //////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////
 //START: PGSQL and PGSQL Dependency Creation
-# This ensures we have unique CAF compliant names for our resources.
+# This ensures we have unique names for our resources.
 module "pgsqlNaming" {
   source  = "Azure/naming/azurerm"
   version = "0.3.0"
@@ -241,7 +241,7 @@ resource "azurerm_key_vault_secret" "secret" {
   key_vault_id    = azurerm_key_vault.keyvault.id
   name            = "secretname"
   expiration_date = "2026-12-30T20:00:00Z"
-  value           = "password123"
+  value           = "testkey123"
 
   depends_on = [azurerm_role_assignment.current]
 }
