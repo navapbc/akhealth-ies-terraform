@@ -277,13 +277,6 @@ resource "azurerm_container_group" "containerGroupInstance" {
     secure_environment_variables = { "SECENV" = "avmpoc" }
 
     ports {
-      port     = 80
-      protocol = "TCP"
-    }
-
-
-
-    ports {
       port     = 443
       protocol = "TCP"
     }
@@ -307,7 +300,7 @@ resource "azurerm_container_group" "containerGroupInstance" {
   }
 
   exposed_port {
-    port     = "80"
+    port     = "443"
     protocol = "TCP"
   }
 
