@@ -214,10 +214,6 @@ resource "azurerm_key_vault" "keyvault" {
   tenant_id                     = data.azurerm_client_config.current.tenant_id
   public_network_access_enabled = true
   rbac_authorization_enabled    = true
-  network_acls {
-    default_action = "Allow"
-    bypass         = "AzureServices"
-  }
 }
 
 //this block gives permissions to the current identity (user, service, or managed identity)
