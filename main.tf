@@ -215,9 +215,8 @@ resource "azurerm_key_vault" "keyvault" {
   public_network_access_enabled = true
   rbac_authorization_enabled    = true
   network_acls {
-    default_action = "Deny"
+    default_action = "Allow"
     bypass         = "AzureServices"
-    ip_rules       = ["208.190.199.195"]
   }
 }
 
