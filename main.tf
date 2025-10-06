@@ -77,11 +77,6 @@ resource "azurerm_subnet" "pgsqlSubnet" {
   }
 }
 
-/*resource "azurerm_private_dns_zone" "pgsqlPrivateDNSZone" {
-  name                = "private.postgres.database.azure.com"
-  resource_group_name = azurerm_resource_group.defaultResourceGroup.name
-}*/
-
 resource "azurerm_postgresql_flexible_server" "pgsqlFlexibleServer" {
   depends_on          = [azurerm_subnet.pgsqlSubnet]
   location            = "eastus"
@@ -109,13 +104,6 @@ resource "azurerm_postgresql_flexible_server" "pgsqlFlexibleServer" {
 
   version = 16
 }
-
-/*resource "azurerm_role_assignment" "pgsqlOwner" {
-  scope                = azurerm_postgresql_flexible_server.pgsqlFlexibleServer.id
-  role_definition_name = "Owner"
-  principal_id         = "ecd5bf2d-f15c-44d1-8420-529d7c45e88b" //secgrp-akies-dev-dbadmin-001
-  principal_type       = "Group"
-}*/
 
 resource "azurerm_postgresql_flexible_server_active_directory_administrator" "pgsqlAdmin" {
   depends_on          = [azurerm_postgresql_flexible_server.pgsqlFlexibleServer]
