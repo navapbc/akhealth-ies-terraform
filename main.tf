@@ -239,9 +239,17 @@ resource "azurerm_key_vault_secret" "secret2" {
   name            = "secretname2"
   expiration_date = "2026-12-30T20:00:00Z"
   value           = "testkey1234"
-
   depends_on = [azurerm_role_assignment.current]
 }
+
+resource "azurerm_key_vault_secret" "secret3" {
+  key_vault_id    = azurerm_key_vault.keyvault.id
+  name            = "secretname3"
+  expiration_date = "2026-12-30T20:00:00Z"
+  value           = "testkey12345"
+  depends_on = [azurerm_role_assignment.current]
+}
+
 
 resource "azurerm_container_group" "containerGroupInstance" {
   depends_on                  = [azurerm_container_registry.this]
