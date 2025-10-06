@@ -1,7 +1,6 @@
 name: Terraform Azure Deploy
 
-on:
-  push
+on: [push, workflow_dispatch]
 
 env:
   TF_VERSION: 1.11.4
