@@ -15,25 +15,25 @@ output "snet_appsvc_name" {
 }
 
 output "snet_pe_resource_id" {
-  value = length(azurerm_subnet.private_endpoint) == 0 ? null : azurerm_subnet.private_endpoint[0].id
+  value = local.create_private_endpoint_subnet ? azurerm_subnet.private_endpoint[0].id : null
 }
 
 output "snet_pe_name" {
-  value = length(azurerm_subnet.private_endpoint) == 0 ? null : azurerm_subnet.private_endpoint[0].name
+  value = local.create_private_endpoint_subnet ? azurerm_subnet.private_endpoint[0].name : null
 }
 
 output "snet_postgresql_resource_id" {
-  value = length(azurerm_subnet.postgresql) == 0 ? null : azurerm_subnet.postgresql[0].id
+  value = local.create_postgresql_subnet ? azurerm_subnet.postgresql[0].id : null
 }
 
 output "snet_postgresql_name" {
-  value = length(azurerm_subnet.postgresql) == 0 ? null : azurerm_subnet.postgresql[0].name
+  value = local.create_postgresql_subnet ? azurerm_subnet.postgresql[0].name : null
 }
 
 output "snet_appgw_resource_id" {
-  value = length(azurerm_subnet.app_gateway) == 0 ? null : azurerm_subnet.app_gateway[0].id
+  value = local.create_app_gateway_subnet ? azurerm_subnet.app_gateway[0].id : null
 }
 
 output "snet_appgw_name" {
-  value = length(azurerm_subnet.app_gateway) == 0 ? null : azurerm_subnet.app_gateway[0].name
+  value = local.create_app_gateway_subnet ? azurerm_subnet.app_gateway[0].name : null
 }

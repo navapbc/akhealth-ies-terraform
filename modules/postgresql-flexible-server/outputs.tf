@@ -7,7 +7,7 @@ output "resource_id" {
 }
 
 output "resource_group_name" {
-  value = var.resource_group_name
+  value = azurerm_postgresql_flexible_server.this.resource_group_name
 }
 
 output "location" {

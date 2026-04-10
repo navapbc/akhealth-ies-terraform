@@ -12,22 +12,20 @@ locals {
     global         = "global"
   }
 
-  region_abbreviation           = lookup(local.region_abbreviations, var.location, replace(var.location, " ", ""))
-  workload_segment              = trimspace(var.workload_description) == "" ? "" : "-${var.workload_description}"
+  region_abbreviation           = local.region_abbreviations[var.location]
+  workload_segment              = var.workload_description == null ? "" : "-${var.workload_description}"
   name                          = substr("app-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 60)
   kind_lower                    = lower(var.kind)
   is_function_app               = strcontains(local.kind_lower, "functionapp")
-  is_linux                      = strcontains(local.kind_lower, "linux") || try(var.reserved, false) || lower(var.service_plan_kind) == "linux"
+  is_linux                      = strcontains(local.kind_lower, "linux") || var.reserved || lower(var.service_plan_kind) == "linux"
   create_private_endpoint       = var.enable_default_private_endpoint
-  identity_enabled              = try(var.managed_identities.systemAssigned, false)
+  identity_enabled              = var.managed_identities != null && var.managed_identities.systemAssigned
   public_network_access_enabled = var.public_network_access == null ? null : var.public_network_access == "Enabled"
   merged_app_settings = merge(
-    try(one([for config in var.configs : config.properties if try(config.name, "") == "appsettings"]), {}),
-    try(one([
-      for config in var.configs : {
-        APPLICATIONINSIGHTS_CONNECTION_STRING = var.solution_application_insights_connection_string
-      } if try(config.name, "") == "appsettings" && try(config.useSolutionApplicationInsights, false)
-    ]), {})
+    var.app_settings,
+    var.use_solution_application_insights ? {
+      APPLICATIONINSIGHTS_CONNECTION_STRING = var.solution_application_insights_connection_string
+    } : {}
   )
 }
 
@@ -49,7 +47,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "default" {
   resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.default[0].name
   virtual_network_id    = each.value.virtualNetworkResourceId
-  registration_enabled  = try(each.value.registrationEnabled, false)
+  registration_enabled  = each.value.registrationEnabled == null ? false : each.value.registrationEnabled
 }
 
 resource "azurerm_windows_web_app" "this" {
@@ -78,15 +76,15 @@ resource "azurerm_windows_web_app" "this" {
   }
 
   site_config {
-    always_on                         = try(var.site_config.alwaysOn, null)
-    ftps_state                        = try(var.site_config.ftpsState, null)
-    health_check_path                 = try(var.site_config.healthCheckPath, null)
-    health_check_eviction_time_in_min = try(var.site_config.healthCheckPath, null) == null ? null : 2
-    http2_enabled                     = try(var.site_config.http20Enabled, null)
-    local_mysql_enabled               = try(var.site_config.localMySqlEnabled, false)
-    minimum_tls_version               = try(var.site_config.minTlsVersion, null)
+    always_on                         = var.site_config.alwaysOn
+    ftps_state                        = var.site_config.ftpsState
+    health_check_path                 = var.site_config.healthCheckPath
+    health_check_eviction_time_in_min = var.site_config.healthCheckPath == null ? null : 2
+    http2_enabled                     = var.site_config.http20Enabled
+    local_mysql_enabled               = var.site_config.localMySqlEnabled == null ? false : var.site_config.localMySqlEnabled
+    minimum_tls_version               = var.site_config.minTlsVersion
     use_32_bit_worker                 = false
-    vnet_route_all_enabled            = try(var.outbound_vnet_routing.allTraffic, null)
+    vnet_route_all_enabled            = var.outbound_vnet_routing == null ? null : var.outbound_vnet_routing.allTraffic
     websockets_enabled                = true
   }
 }
@@ -116,13 +114,13 @@ resource "azurerm_linux_web_app" "this" {
   }
 
   site_config {
-    always_on                         = try(var.site_config.alwaysOn, null)
-    ftps_state                        = try(var.site_config.ftpsState, null)
-    health_check_path                 = try(var.site_config.healthCheckPath, null)
-    health_check_eviction_time_in_min = try(var.site_config.healthCheckPath, null) == null ? null : 2
-    http2_enabled                     = try(var.site_config.http20Enabled, null)
-    local_mysql_enabled               = try(var.site_config.localMySqlEnabled, false)
-    minimum_tls_version               = try(var.site_config.minTlsVersion, null)
+    always_on                         = var.site_config.alwaysOn
+    ftps_state                        = var.site_config.ftpsState
+    health_check_path                 = var.site_config.healthCheckPath
+    health_check_eviction_time_in_min = var.site_config.healthCheckPath == null ? null : 2
+    http2_enabled                     = var.site_config.http20Enabled
+    local_mysql_enabled               = var.site_config.localMySqlEnabled == null ? false : var.site_config.localMySqlEnabled
+    minimum_tls_version               = var.site_config.minTlsVersion
   }
 }
 
@@ -137,7 +135,7 @@ resource "azurerm_windows_function_app" "this" {
   https_only                                     = var.https_only
   public_network_access_enabled                  = local.public_network_access_enabled
   virtual_network_subnet_id                      = var.virtual_network_subnet_resource_id
-  storage_account_name                           = try(var.function_host_storage_account.name, null)
+  storage_account_name                           = var.function_host_storage_account == null ? null : var.function_host_storage_account.name
   storage_uses_managed_identity                  = true
   tags                                           = var.tags
   app_settings                                   = local.merged_app_settings
@@ -152,12 +150,12 @@ resource "azurerm_windows_function_app" "this" {
   }
 
   site_config {
-    always_on                         = try(var.site_config.alwaysOn, null)
-    ftps_state                        = try(var.site_config.ftpsState, null)
-    health_check_path                 = try(var.site_config.healthCheckPath, null)
-    health_check_eviction_time_in_min = try(var.site_config.healthCheckPath, null) == null ? null : 2
-    http2_enabled                     = try(var.site_config.http20Enabled, null)
-    minimum_tls_version               = try(var.site_config.minTlsVersion, null)
+    always_on                         = var.site_config.alwaysOn
+    ftps_state                        = var.site_config.ftpsState
+    health_check_path                 = var.site_config.healthCheckPath
+    health_check_eviction_time_in_min = var.site_config.healthCheckPath == null ? null : 2
+    http2_enabled                     = var.site_config.http20Enabled
+    minimum_tls_version               = var.site_config.minTlsVersion
   }
 }
 
@@ -172,7 +170,7 @@ resource "azurerm_linux_function_app" "this" {
   https_only                               = var.https_only
   public_network_access_enabled            = local.public_network_access_enabled
   virtual_network_subnet_id                = var.virtual_network_subnet_resource_id
-  storage_account_name                     = try(var.function_host_storage_account.name, null)
+  storage_account_name                     = var.function_host_storage_account == null ? null : var.function_host_storage_account.name
   storage_uses_managed_identity            = true
   tags                                     = var.tags
   app_settings                             = local.merged_app_settings
@@ -186,39 +184,47 @@ resource "azurerm_linux_function_app" "this" {
   }
 
   site_config {
-    always_on                         = try(var.site_config.alwaysOn, null)
-    ftps_state                        = try(var.site_config.ftpsState, null)
-    health_check_path                 = try(var.site_config.healthCheckPath, null)
-    health_check_eviction_time_in_min = try(var.site_config.healthCheckPath, null) == null ? null : 2
-    http2_enabled                     = try(var.site_config.http20Enabled, null)
-    minimum_tls_version               = try(var.site_config.minTlsVersion, null)
+    always_on                         = var.site_config.alwaysOn
+    ftps_state                        = var.site_config.ftpsState
+    health_check_path                 = var.site_config.healthCheckPath
+    health_check_eviction_time_in_min = var.site_config.healthCheckPath == null ? null : 2
+    http2_enabled                     = var.site_config.http20Enabled
+    minimum_tls_version               = var.site_config.minTlsVersion
   }
 }
 
 locals {
-  app_id = coalesce(
-    try(azurerm_windows_web_app.this[0].id, null),
-    try(azurerm_linux_web_app.this[0].id, null),
-    try(azurerm_windows_function_app.this[0].id, null),
-    try(azurerm_linux_function_app.this[0].id, null)
+  app_id = local.is_function_app ? (
+    local.is_linux ? azurerm_linux_function_app.this[0].id : azurerm_windows_function_app.this[0].id
+  ) : (
+    local.is_linux ? azurerm_linux_web_app.this[0].id : azurerm_windows_web_app.this[0].id
   )
-  app_name = coalesce(
-    try(azurerm_windows_web_app.this[0].name, null),
-    try(azurerm_linux_web_app.this[0].name, null),
-    try(azurerm_windows_function_app.this[0].name, null),
-    try(azurerm_linux_function_app.this[0].name, null)
+  app_name = local.is_function_app ? (
+    local.is_linux ? azurerm_linux_function_app.this[0].name : azurerm_windows_function_app.this[0].name
+  ) : (
+    local.is_linux ? azurerm_linux_web_app.this[0].name : azurerm_windows_web_app.this[0].name
   )
-  default_hostname = coalesce(
-    try(azurerm_windows_web_app.this[0].default_hostname, null),
-    try(azurerm_linux_web_app.this[0].default_hostname, null),
-    try(azurerm_windows_function_app.this[0].default_hostname, null),
-    try(azurerm_linux_function_app.this[0].default_hostname, null)
+  default_hostname = local.is_function_app ? (
+    local.is_linux ? azurerm_linux_function_app.this[0].default_hostname : azurerm_windows_function_app.this[0].default_hostname
+  ) : (
+    local.is_linux ? azurerm_linux_web_app.this[0].default_hostname : azurerm_windows_web_app.this[0].default_hostname
   )
-  principal_id = coalesce(
-    try(azurerm_windows_web_app.this[0].identity[0].principal_id, null),
-    try(azurerm_linux_web_app.this[0].identity[0].principal_id, null),
-    try(azurerm_windows_function_app.this[0].identity[0].principal_id, null),
-    try(azurerm_linux_function_app.this[0].identity[0].principal_id, null)
+  principal_id = !local.identity_enabled ? null : (
+    local.is_function_app ? (
+      local.is_linux ? azurerm_linux_function_app.this[0].identity[0].principal_id : azurerm_windows_function_app.this[0].identity[0].principal_id
+    ) : (
+      local.is_linux ? azurerm_linux_web_app.this[0].identity[0].principal_id : azurerm_windows_web_app.this[0].identity[0].principal_id
+    )
+  )
+  app_resource_group_name = local.is_function_app ? (
+    local.is_linux ? azurerm_linux_function_app.this[0].resource_group_name : azurerm_windows_function_app.this[0].resource_group_name
+  ) : (
+    local.is_linux ? azurerm_linux_web_app.this[0].resource_group_name : azurerm_windows_web_app.this[0].resource_group_name
+  )
+  app_location = local.is_function_app ? (
+    local.is_linux ? azurerm_linux_function_app.this[0].location : azurerm_windows_function_app.this[0].location
+  ) : (
+    local.is_linux ? azurerm_linux_web_app.this[0].location : azurerm_windows_web_app.this[0].location
   )
 }
 

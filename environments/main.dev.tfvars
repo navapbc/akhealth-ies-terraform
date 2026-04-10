@@ -29,11 +29,20 @@ spoke_network_config = {
   disableBgpRoutePropagation        = true
   encryption                        = false
   encryptionEnforcement             = "AllowUnencrypted"
-  flowTimeoutInMinutes              = 0
+  flowTimeoutInMinutes              = null
   enableVmProtection                = false
   enablePrivateEndpointVNetPolicies = "Disabled"
   roleAssignments                   = []
   diagnosticSettings                = []
+  nsgDiagnosticSettings = [
+    {
+      logCategoriesAndGroups = [
+        {
+          categoryGroup = "allLogs"
+        }
+      ]
+    }
+  ]
 }
 
 service_plan_config = {
@@ -75,9 +84,10 @@ app_service_config = {
   clientAffinityEnabled             = false
   clientAffinityProxyEnabled        = true
   clientAffinityPartitioningEnabled = false
+  appSettings                       = {}
+  useSolutionApplicationInsights    = false
   diagnosticSettings                = []
   slots                             = []
-  configs                           = []
 }
 
 key_vault_config = {
@@ -118,10 +128,9 @@ postgresql_admin_group_config = {
 postgresql_config = {
   workloadDescription               = "postgresql"
   privateAccessMode                 = "delegatedSubnet"
-  skuName                           = "Standard_B1ms"
-  tier                              = "Burstable"
-  availabilityZone                  = -1
-  highAvailabilityZone              = -1
+  skuName                           = "B_Standard_B1ms"
+  availabilityZone                  = null
+  highAvailabilityZone              = null
   highAvailability                  = "Disabled"
   backupRetentionDays               = 7
   geoRedundantBackup                = "Disabled"

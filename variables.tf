@@ -104,7 +104,7 @@ variable "spoke_network_config" {
     disableBgpRoutePropagation        = bool
     encryption                        = bool
     encryptionEnforcement             = string
-    flowTimeoutInMinutes              = number
+    flowTimeoutInMinutes              = optional(number)
     enableVmProtection                = bool
     enablePrivateEndpointVNetPolicies = string
     bgpCommunity                      = optional(string)
@@ -142,8 +142,47 @@ variable "spoke_network_config" {
         enabled  = optional(bool)
       })), [])
     })), [])
+    nsgDiagnosticSettings = optional(list(object({
+      name                                = optional(string)
+      workspaceResourceId                 = optional(string)
+      logAnalyticsDestinationType         = optional(string)
+      storageAccountResourceId            = optional(string)
+      eventHubAuthorizationRuleResourceId = optional(string)
+      eventHubName                        = optional(string)
+      marketplacePartnerResourceId        = optional(string)
+      logCategoriesAndGroups = optional(list(object({
+        category      = optional(string)
+        categoryGroup = optional(string)
+      })), [])
+      metricCategories = optional(list(object({
+        category = string
+        enabled  = optional(bool)
+      })), [])
+    })), [])
   })
   description = "Azure native spoke network configuration object."
+
+  validation {
+    condition = (
+      var.spoke_network_config.ingressOption != "applicationGateway" ||
+      (
+        var.spoke_network_config.applicationGatewayConfig != null &&
+        trimspace(var.spoke_network_config.applicationGatewayConfig.subnetAddressSpace) != ""
+      )
+    )
+    error_message = "spoke_network_config.applicationGatewayConfig.subnetAddressSpace must be provided when ingressOption is applicationGateway."
+  }
+
+  validation {
+    condition = (
+      !var.spoke_network_config.enableEgressLockdown ||
+      (
+        var.spoke_network_config.egressFirewallConfig != null &&
+        trimspace(var.spoke_network_config.egressFirewallConfig.internalIp) != ""
+      )
+    )
+    error_message = "spoke_network_config.egressFirewallConfig.internalIp must be provided when enableEgressLockdown is true."
+  }
 }
 
 variable "service_plan_config" {
@@ -234,11 +273,8 @@ variable "app_service_config" {
       minTlsVersion     = optional(string)
       localMySqlEnabled = optional(bool)
     })
-    configs = optional(list(object({
-      name                           = string
-      properties                     = optional(map(string))
-      useSolutionApplicationInsights = optional(bool)
-    })), [])
+    appSettings                    = optional(map(string), {})
+    useSolutionApplicationInsights = optional(bool, false)
     diagnosticSettings = optional(list(object({
       name                                = optional(string)
       workspaceResourceId                 = optional(string)
@@ -781,9 +817,8 @@ variable "postgresql_config" {
     workloadDescription               = string
     privateAccessMode                 = string
     skuName                           = string
-    tier                              = string
-    availabilityZone                  = number
-    highAvailabilityZone              = number
+    availabilityZone                  = optional(number)
+    highAvailabilityZone              = optional(number)
     highAvailability                  = string
     backupRetentionDays               = number
     geoRedundantBackup                = string
@@ -838,6 +873,47 @@ variable "postgresql_config" {
     })), [])
   })
   description = "Azure native PostgreSQL Flexible Server configuration object."
+
+  validation {
+    condition = contains(["delegatedSubnet", "none"], var.postgresql_config.privateAccessMode)
+    error_message = "postgresql_config.privateAccessMode must be delegatedSubnet or none."
+  }
+
+  validation {
+    condition = contains(["Disabled", "SameZone", "ZoneRedundant"], var.postgresql_config.highAvailability)
+    error_message = "postgresql_config.highAvailability must be Disabled, SameZone, or ZoneRedundant."
+  }
+
+  validation {
+    condition = contains(["Enabled", "Disabled"], var.postgresql_config.geoRedundantBackup)
+    error_message = "postgresql_config.geoRedundantBackup must be Enabled or Disabled."
+  }
+
+  validation {
+    condition = contains(["Enabled", "Disabled"], var.postgresql_config.autoGrow)
+    error_message = "postgresql_config.autoGrow must be Enabled or Disabled."
+  }
+
+  validation {
+    condition = contains(["Enabled", "Disabled"], var.postgresql_config.publicNetworkAccess)
+    error_message = "postgresql_config.publicNetworkAccess must be Enabled or Disabled."
+  }
+
+  validation {
+    condition = (
+      var.postgresql_config.highAvailability == "Disabled" ||
+      var.postgresql_config.availabilityZone != null
+    )
+    error_message = "postgresql_config.availabilityZone must be provided when highAvailability is enabled."
+  }
+
+  validation {
+    condition = (
+      var.postgresql_config.highAvailability != "ZoneRedundant" ||
+      var.postgresql_config.highAvailabilityZone != null
+    )
+    error_message = "postgresql_config.highAvailabilityZone must be provided when highAvailability is ZoneRedundant."
+  }
 }
 
 variable "log_analytics_config" {

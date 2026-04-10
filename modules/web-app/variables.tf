@@ -16,11 +16,32 @@ variable "instance_number" {
 
 variable "workload_description" {
   type    = string
-  default = ""
+  default = null
+
+  validation {
+    condition     = var.workload_description == null || trimspace(var.workload_description) != ""
+    error_message = "workload_description must be null or a non-empty string."
+  }
 }
 
 variable "location" {
   type = string
+
+  validation {
+    condition = contains([
+      "eastus",
+      "eastus2",
+      "westus",
+      "westus2",
+      "westus3",
+      "centralus",
+      "northcentralus",
+      "southcentralus",
+      "westcentralus",
+      "global",
+    ], var.location)
+    error_message = "location must be one of the supported naming locations for this module."
+  }
 }
 
 variable "kind" {
@@ -92,13 +113,14 @@ variable "disable_basic_publishing_credentials" {
   default = false
 }
 
-variable "configs" {
-  type = list(object({
-    name                           = string
-    properties                     = optional(map(string))
-    useSolutionApplicationInsights = optional(bool)
-  }))
-  default = []
+variable "app_settings" {
+  type    = map(string)
+  default = {}
+}
+
+variable "use_solution_application_insights" {
+  type    = bool
+  default = false
 }
 
 variable "solution_application_insights_connection_string" {

@@ -1,5 +1,3 @@
-data "azurerm_client_config" "current" {}
-
 locals {
   region_abbreviations = {
     eastus         = "eus"
@@ -14,8 +12,8 @@ locals {
     global         = "global"
   }
 
-  region_abbreviation = lookup(local.region_abbreviations, var.location, replace(var.location, " ", ""))
-  workload_segment    = trimspace(var.workload_description) == "" ? "" : "-${var.workload_description}"
+  region_abbreviation = local.region_abbreviations[var.location]
+  workload_segment    = var.workload_description == null ? "" : "-${var.workload_description}"
   name                = substr("log-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 63)
 }
 

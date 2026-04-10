@@ -16,11 +16,32 @@ variable "instance_number" {
 
 variable "workload_description" {
   type    = string
-  default = ""
+  default = null
+
+  validation {
+    condition     = var.workload_description == null || trimspace(var.workload_description) != ""
+    error_message = "workload_description must be null or a non-empty string."
+  }
 }
 
 variable "location" {
   type = string
+
+  validation {
+    condition = contains([
+      "eastus",
+      "eastus2",
+      "westus",
+      "westus2",
+      "westus3",
+      "centralus",
+      "northcentralus",
+      "southcentralus",
+      "westcentralus",
+      "global",
+    ], var.location)
+    error_message = "location must be one of the supported naming locations for this module."
+  }
 }
 
 variable "tags" {
@@ -46,10 +67,20 @@ variable "disable_local_auth" {
 
 variable "public_network_access_for_ingestion" {
   type = string
+
+  validation {
+    condition     = contains(["Enabled", "Disabled"], var.public_network_access_for_ingestion)
+    error_message = "public_network_access_for_ingestion must be Enabled or Disabled."
+  }
 }
 
 variable "public_network_access_for_query" {
   type = string
+
+  validation {
+    condition     = contains(["Enabled", "Disabled"], var.public_network_access_for_query)
+    error_message = "public_network_access_for_query must be Enabled or Disabled."
+  }
 }
 
 variable "lock" {

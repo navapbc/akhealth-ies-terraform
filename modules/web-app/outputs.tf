@@ -7,11 +7,11 @@ output "resource_id" {
 }
 
 output "resource_group_name" {
-  value = var.resource_group_name
+  value = local.app_resource_group_name
 }
 
 output "location" {
-  value = var.location
+  value = local.app_location
 }
 
 output "default_hostname" {

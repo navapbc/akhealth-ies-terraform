@@ -16,11 +16,32 @@ variable "instance_number" {
 
 variable "workload_description" {
   type    = string
-  default = ""
+  default = null
+
+  validation {
+    condition     = var.workload_description == null || trimspace(var.workload_description) != ""
+    error_message = "workload_description must be null or a non-empty string."
+  }
 }
 
 variable "location" {
   type = string
+
+  validation {
+    condition = contains([
+      "eastus",
+      "eastus2",
+      "westus",
+      "westus2",
+      "westus3",
+      "centralus",
+      "northcentralus",
+      "southcentralus",
+      "westcentralus",
+      "global",
+    ], var.location)
+    error_message = "location must be one of the supported naming locations for this module."
+  }
 }
 
 variable "deploy_ase_v3" {
@@ -50,16 +71,13 @@ variable "application_gateway_config" {
   default = null
 }
 
+variable "deploy_application_gateway_subnet" {
+  type = bool
+}
+
 variable "postgresql_private_access_config" {
   type = object({
     subnetAddressSpace = string
-  })
-  default = null
-}
-
-variable "egress_firewall_config" {
-  type = object({
-    internalIp = string
   })
   default = null
 }
@@ -73,8 +91,9 @@ variable "enable_egress_lockdown" {
   type = bool
 }
 
-variable "networking_option" {
-  type = string
+variable "egress_firewall_internal_ip" {
+  type    = string
+  default = null
 }
 
 variable "deploy_postgresql_private_access" {
@@ -82,8 +101,25 @@ variable "deploy_postgresql_private_access" {
   default = false
 }
 
-variable "log_analytics_workspace_id" {
-  type = string
+variable "nsg_diagnostic_settings" {
+  type = list(object({
+    name                                = optional(string)
+    workspaceResourceId                 = optional(string)
+    logAnalyticsDestinationType         = optional(string)
+    storageAccountResourceId            = optional(string)
+    eventHubAuthorizationRuleResourceId = optional(string)
+    eventHubName                        = optional(string)
+    marketplacePartnerResourceId        = optional(string)
+    logCategoriesAndGroups = optional(list(object({
+      category      = optional(string)
+      categoryGroup = optional(string)
+    })), [])
+    metricCategories = optional(list(object({
+      category = string
+      enabled  = optional(bool)
+    })), [])
+  }))
+  default = []
 }
 
 variable "hub_peering_config" {
@@ -177,7 +213,8 @@ variable "vnet_encryption_enforcement" {
 }
 
 variable "flow_timeout_in_minutes" {
-  type = number
+  type    = number
+  default = null
 }
 
 variable "enable_vm_protection" {

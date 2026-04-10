@@ -12,7 +12,7 @@ module "log_analytics_workspace" {
   system_abbreviation                               = var.system_abbreviation
   environment_abbreviation                          = var.environment_abbreviation
   instance_number                                   = var.instance_number
-  workload_description                              = var.workload_description
+  workload_description                              = trimspace(var.workload_description) == "" ? null : var.workload_description
   location                                          = var.location
   tags                                              = var.tags
   sku                                               = var.log_analytics_config.sku
@@ -33,20 +33,25 @@ module "network" {
   system_abbreviation                         = var.system_abbreviation
   environment_abbreviation                    = var.environment_abbreviation
   instance_number                             = var.instance_number
-  workload_description                        = var.workload_description
+  workload_description                        = trimspace(var.workload_description) == "" ? null : var.workload_description
   location                                    = var.location
   deploy_ase_v3                               = var.deploy_ase_v3
   deploy_private_networking                   = local.private_networking_enabled
+  deploy_application_gateway_subnet           = local.use_application_gateway_ingress
   enable_egress_lockdown                      = var.spoke_network_config.enableEgressLockdown
   vnet_spoke_address_space                    = var.spoke_network_config.vnetAddressSpace
   subnet_spoke_appsvc_address_space           = var.spoke_network_config.appSvcSubnetAddressSpace
   subnet_spoke_private_endpoint_address_space = var.spoke_network_config.privateEndpointSubnetAddressSpace
   application_gateway_config                  = var.spoke_network_config.applicationGatewayConfig
   postgresql_private_access_config            = var.spoke_network_config.postgreSqlPrivateAccessConfig
-  egress_firewall_config                      = var.spoke_network_config.egressFirewallConfig
-  networking_option                           = var.spoke_network_config.ingressOption
+  egress_firewall_internal_ip                 = var.spoke_network_config.egressFirewallConfig == null ? null : var.spoke_network_config.egressFirewallConfig.internalIp
   deploy_postgresql_private_access            = local.postgresql_private_networking_enabled
-  log_analytics_workspace_id                  = local.resolved_log_analytics_workspace_id
+  nsg_diagnostic_settings = [
+    for diagnostic_setting in var.spoke_network_config.nsgDiagnosticSettings : merge(
+      diagnostic_setting,
+      diagnostic_setting.workspaceResourceId == null ? { workspaceResourceId = local.resolved_log_analytics_workspace_id } : {}
+    )
+  ]
   hub_peering_config                          = var.spoke_network_config.hubPeeringConfig
   dns_servers                                 = var.spoke_network_config.dnsServers
   ddos_protection_plan_resource_id            = var.spoke_network_config.ddosProtectionPlanResourceId
@@ -93,7 +98,7 @@ module "app_insights" {
   system_abbreviation                 = var.system_abbreviation
   environment_abbreviation            = var.environment_abbreviation
   instance_number                     = var.instance_number
-  workload_description                = var.workload_description
+  workload_description                = trimspace(var.workload_description) == "" ? null : var.workload_description
   location                            = var.location
   workspace_resource_id               = local.resolved_log_analytics_workspace_id
   application_type                    = var.app_insights_config.applicationType
@@ -141,7 +146,7 @@ module "web_app" {
   system_abbreviation                             = var.system_abbreviation
   environment_abbreviation                        = var.environment_abbreviation
   instance_number                                 = var.instance_number
-  workload_description                            = var.workload_description
+  workload_description                            = trimspace(var.workload_description) == "" ? null : var.workload_description
   location                                        = var.location
   kind                                            = var.app_service_config.kind
   service_plan_kind                               = var.service_plan_config.kind
@@ -156,7 +161,8 @@ module "web_app" {
   virtual_network_subnet_resource_id              = local.web_app_private_networking_enabled && !var.service_plan_config.isCustomMode ? module.network.snet_appsvc_resource_id : null
   enabled                                         = var.app_service_config.enabled
   disable_basic_publishing_credentials            = var.app_service_config.disableBasicPublishingCredentials
-  configs                                         = var.app_service_config.configs
+  app_settings                                    = var.app_service_config.appSettings
+  use_solution_application_insights               = var.app_service_config.useSolutionApplicationInsights
   solution_application_insights_connection_string = module.app_insights.connection_string
   function_host_storage_account                   = var.app_service_config.functionHostStorageAccount
   enable_default_private_endpoint                 = local.web_app_private_networking_enabled
@@ -340,7 +346,6 @@ module "postgresql" {
   administrator_group_display_name       = var.postgresql_admin_group_config.displayName
   administrator_group_tenant_id          = data.azurerm_client_config.current.tenant_id
   sku_name                               = var.postgresql_config.skuName
-  tier                                   = var.postgresql_config.tier
   availability_zone                      = var.postgresql_config.availabilityZone
   high_availability_zone                 = var.postgresql_config.highAvailabilityZone
   high_availability                      = var.postgresql_config.highAvailability

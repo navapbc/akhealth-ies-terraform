@@ -12,18 +12,13 @@ locals {
     global         = "global"
   }
 
-  region_abbreviation    = lookup(local.region_abbreviations, var.location, replace(var.location, " ", ""))
+  region_abbreviation    = local.region_abbreviations[var.location]
   name                   = substr("psqlfx-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}-${var.workload_description}-${var.instance_number}", 0, 63)
   private_access_enabled = var.private_access_mode == "delegatedSubnet"
   private_dns_zone_label = substr("pdz-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}-${var.workload_description}-${var.instance_number}", 0, 63)
   private_dns_zone_name  = "${local.private_dns_zone_label}.postgres.database.azure.com"
   storage_mb             = var.storage_size_gb * 1024
   public_network_access  = var.public_network_access == "Enabled"
-  sku_name = startswith(var.sku_name, "B_") || startswith(var.sku_name, "GP_") || startswith(var.sku_name, "MO_") ? var.sku_name : (
-    var.tier == "Burstable" ? "B_${var.sku_name}" : (
-      var.tier == "GeneralPurpose" ? "GP_${var.sku_name}" : "MO_${var.sku_name}"
-    )
-  )
 }
 
 resource "azurerm_private_dns_zone" "this" {
@@ -44,7 +39,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
   resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.this[0].name
   virtual_network_id    = each.value.virtualNetworkResourceId
-  registration_enabled  = try(each.value.registrationEnabled, false)
+  registration_enabled  = each.value.registrationEnabled == null ? false : each.value.registrationEnabled
 }
 
 resource "azurerm_postgresql_flexible_server" "this" {
@@ -52,7 +47,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
   resource_group_name           = var.resource_group_name
   location                      = var.location
   version                       = var.engine_version
-  sku_name                      = local.sku_name
+  sku_name                      = var.sku_name
   storage_mb                    = local.storage_mb
   backup_retention_days         = var.backup_retention_days
   auto_grow_enabled             = var.auto_grow == "Enabled"
@@ -60,7 +55,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
   public_network_access_enabled = local.public_network_access
   delegated_subnet_id           = local.private_access_enabled ? var.delegated_subnet_resource_id : null
   private_dns_zone_id           = local.private_access_enabled ? azurerm_private_dns_zone.this[0].id : null
-  zone                          = var.availability_zone == -1 ? null : tostring(var.availability_zone)
+  zone                          = var.availability_zone == null ? null : tostring(var.availability_zone)
   tags                          = var.tags
 
   authentication {
@@ -101,8 +96,8 @@ resource "azurerm_postgresql_flexible_server_database" "this" {
 
   name      = each.value.name
   server_id = azurerm_postgresql_flexible_server.this.id
-  charset   = try(each.value.charset, null)
-  collation = try(each.value.collation, null)
+  charset   = each.value.charset
+  collation = each.value.collation
 }
 
 resource "azurerm_postgresql_flexible_server_configuration" "this" {
@@ -113,7 +108,7 @@ resource "azurerm_postgresql_flexible_server_configuration" "this" {
 
   name      = each.value.name
   server_id = azurerm_postgresql_flexible_server.this.id
-  value     = try(each.value.value, null)
+  value     = each.value.value
 }
 
 module "role_assignments" {

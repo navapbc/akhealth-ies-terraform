@@ -12,8 +12,8 @@ locals {
     global         = "global"
   }
 
-  region_abbreviation = lookup(local.region_abbreviations, var.location, replace(var.location, " ", ""))
-  workload_segment    = trimspace(var.workload_description) == "" ? "" : "-${var.workload_description}"
+  region_abbreviation = local.region_abbreviations[var.location]
+  workload_segment    = var.workload_description == null ? "" : "-${var.workload_description}"
   shared_name_prefix  = "${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}"
   shared_name_suffix  = "${local.workload_segment}-${var.instance_number}"
 
@@ -29,22 +29,16 @@ locals {
     nsg_ase         = substr("nsg-${local.shared_name_prefix}-ase-${var.instance_number}", 0, 80)
     nsg_appgw       = substr("nsg-${local.shared_name_prefix}-appgateway-${var.instance_number}", 0, 80)
     route_table     = substr("rt-${local.shared_name_prefix}${local.shared_name_suffix}", 0, 80)
-    route_name      = substr("route-${local.shared_name_prefix}-egresslockdown-${var.instance_number}", 0, 80)
+    route_name      = substr("rte-${local.shared_name_prefix}-egresslockdown-${var.instance_number}", 0, 80)
   }
 
-  deploy_app_gateway                  = var.networking_option == "applicationGateway"
+  deploy_app_gateway                  = var.deploy_application_gateway_subnet
   create_private_endpoint_subnet      = var.deploy_private_networking
   create_postgresql_subnet            = var.deploy_postgresql_private_access
-  create_app_gateway_subnet           = local.deploy_app_gateway && try(var.application_gateway_config.subnetAddressSpace, "") != ""
+  create_app_gateway_subnet           = var.deploy_application_gateway_subnet
   app_service_delegation              = var.deploy_ase_v3 ? "Microsoft.Web/hostingEnvironments" : "Microsoft.Web/serverFarms"
   app_service_subnet_nsg_id           = var.deploy_ase_v3 ? azurerm_network_security_group.ase[0].id : azurerm_network_security_group.appsvc[0].id
   app_service_private_endpoint_policy = var.deploy_ase_v3 ? "Disabled" : "Enabled"
-  nsg_diagnostic_settings = trimspace(var.log_analytics_workspace_id) == "" ? [] : [{
-    workspaceResourceId = var.log_analytics_workspace_id
-    logCategoriesAndGroups = [{
-      categoryGroup = "allLogs"
-    }]
-  }]
   nsg_diagnostic_targets = merge(
     var.deploy_ase_v3 ? {
       (local.names.nsg_ase) = azurerm_network_security_group.ase[0].id
@@ -64,7 +58,7 @@ locals {
 }
 
 resource "azurerm_route_table" "egress" {
-  count = var.enable_egress_lockdown && try(var.egress_firewall_config.internalIp, null) != null ? 1 : 0
+  count = var.enable_egress_lockdown ? 1 : 0
 
   name                          = local.names.route_table
   location                      = var.location
@@ -76,7 +70,7 @@ resource "azurerm_route_table" "egress" {
     name                   = local.names.route_name
     address_prefix         = "0.0.0.0/0"
     next_hop_type          = "VirtualAppliance"
-    next_hop_in_ip_address = var.egress_firewall_config.internalIp
+    next_hop_in_ip_address = var.egress_firewall_internal_ip
   }
 }
 
@@ -203,7 +197,7 @@ resource "azurerm_virtual_network" "this" {
   resource_group_name     = var.resource_group_name
   address_space           = [var.vnet_spoke_address_space]
   dns_servers             = var.dns_servers
-  flow_timeout_in_minutes = var.flow_timeout_in_minutes > 0 ? var.flow_timeout_in_minutes : null
+  flow_timeout_in_minutes = var.flow_timeout_in_minutes
   bgp_community           = var.virtual_network_bgp_community
   tags                    = var.tags
 
@@ -318,7 +312,7 @@ module "nsg_diagnostic_settings" {
 
   name_prefix        = each.key
   target_resource_id = each.value
-  diagnostic_settings = [for diagnostic_setting in local.nsg_diagnostic_settings : merge(diagnostic_setting, {
+  diagnostic_settings = [for diagnostic_setting in var.nsg_diagnostic_settings : merge(diagnostic_setting, {
     name = "${each.key}-diagnosticSettings"
   })]
 }
