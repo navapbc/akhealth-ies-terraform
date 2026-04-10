@@ -30,44 +30,38 @@ module "log_analytics_workspace" {
 module "network" {
   source = "./modules/network"
 
-  resource_group_name                         = azurerm_resource_group.spoke.name
-  system_abbreviation                         = var.system_abbreviation
-  environment_abbreviation                    = var.environment_abbreviation
-  instance_number                             = var.instance_number
-  workload_description                        = local.normalized_workload_description
-  region_abbreviation                         = local.region_abbreviation
-  location                                    = var.location
-  deploy_ase_v3                               = var.deploy_ase_v3
-  deploy_private_networking                   = local.private_networking_enabled
-  deploy_application_gateway_subnet           = local.use_application_gateway_ingress
-  enable_egress_lockdown                      = var.spoke_network_config.enableEgressLockdown
-  vnet_spoke_address_space                    = var.spoke_network_config.vnetAddressSpace
-  subnet_spoke_appsvc_address_space           = var.spoke_network_config.appSvcSubnetAddressSpace
-  subnet_spoke_private_endpoint_address_space = var.spoke_network_config.privateEndpointSubnetAddressSpace
-  application_gateway_config                  = var.spoke_network_config.applicationGatewayConfig
-  postgresql_private_access_config            = var.spoke_network_config.postgreSqlPrivateAccessConfig
-  egress_firewall_internal_ip                 = var.spoke_network_config.egressFirewallConfig == null ? null : var.spoke_network_config.egressFirewallConfig.internalIp
-  deploy_postgresql_private_access            = local.postgresql_private_networking_enabled
-  nsg_diagnostic_settings = [
-    for diagnostic_setting in var.spoke_network_config.nsgDiagnosticSettings : merge(
-      diagnostic_setting,
-      diagnostic_setting.workspaceResourceId == null ? { workspaceResourceId = local.resolved_log_analytics_workspace_id } : {}
-    )
-  ]
-  hub_peering_config                    = var.spoke_network_config.hubPeeringConfig
-  dns_servers                           = var.spoke_network_config.dnsServers
-  ddos_protection_plan_resource_id      = var.spoke_network_config.ddosProtectionPlanResourceId
-  vnet_diagnostic_settings              = var.spoke_network_config.diagnosticSettings
-  vnet_lock                             = var.spoke_network_config.lock
-  disable_bgp_route_propagation         = var.spoke_network_config.disableBgpRoutePropagation
-  vnet_role_assignments                 = var.spoke_network_config.roleAssignments
-  vnet_encryption                       = var.spoke_network_config.encryption
-  vnet_encryption_enforcement           = var.spoke_network_config.encryptionEnforcement
-  flow_timeout_in_minutes               = var.spoke_network_config.flowTimeoutInMinutes
-  enable_vm_protection                  = var.spoke_network_config.enableVmProtection
-  enable_private_endpoint_vnet_policies = var.spoke_network_config.enablePrivateEndpointVNetPolicies
-  virtual_network_bgp_community         = var.spoke_network_config.bgpCommunity
-  tags                                  = var.tags
+  resource_group_name                          = azurerm_resource_group.spoke.name
+  system_abbreviation                          = var.system_abbreviation
+  environment_abbreviation                     = var.environment_abbreviation
+  instance_number                              = var.instance_number
+  workload_description                         = local.normalized_workload_description
+  region_abbreviation                          = local.region_abbreviation
+  location                                     = var.location
+  deploy_ase_v3                                = var.deploy_ase_v3
+  deploy_private_networking                    = local.private_networking_enabled
+  deploy_application_gateway_subnet            = local.use_application_gateway_ingress
+  enable_egress_lockdown                       = var.spoke_network_config.enableEgressLockdown
+  vnet_spoke_address_space                     = var.spoke_network_config.vnetAddressSpace
+  subnet_spoke_appsvc_address_space            = var.spoke_network_config.appSvcSubnetAddressSpace
+  subnet_spoke_private_endpoint_address_space  = var.spoke_network_config.privateEndpointSubnetAddressSpace
+  application_gateway_config                   = var.spoke_network_config.applicationGatewayConfig
+  postgresql_private_access_config             = var.spoke_network_config.postgreSqlPrivateAccessConfig
+  egress_firewall_internal_ip                  = var.spoke_network_config.egressFirewallConfig == null ? null : var.spoke_network_config.egressFirewallConfig.internalIp
+  deploy_postgresql_private_access             = local.postgresql_private_networking_enabled
+  nsg_diagnostic_default_workspace_resource_id = local.resolved_log_analytics_workspace_id
+  nsg_diagnostic_settings                      = var.spoke_network_config.nsgDiagnosticSettings
+  hub_peering_config                           = var.spoke_network_config.hubPeeringConfig
+  dns_servers                                  = var.spoke_network_config.dnsServers
+  ddos_protection_plan_resource_id             = var.spoke_network_config.ddosProtectionPlanResourceId
+  vnet_diagnostic_settings                     = var.spoke_network_config.diagnosticSettings
+  vnet_lock                                    = var.spoke_network_config.lock
+  disable_bgp_route_propagation                = var.spoke_network_config.disableBgpRoutePropagation
+  vnet_role_assignments                        = var.spoke_network_config.roleAssignments
+  vnet_encryption                              = var.spoke_network_config.encryption
+  vnet_encryption_enforcement                  = var.spoke_network_config.encryptionEnforcement
+  flow_timeout_in_minutes                      = var.spoke_network_config.flowTimeoutInMinutes
+  virtual_network_bgp_community                = var.spoke_network_config.bgpCommunity
+  tags                                         = var.tags
 }
 
 module "app_service_environment" {
@@ -152,7 +146,6 @@ module "web_app" {
   environment_abbreviation                        = var.environment_abbreviation
   instance_number                                 = var.instance_number
   workload_description                            = local.normalized_workload_description
-  region_abbreviation                             = local.region_abbreviation
   location                                        = var.location
   workload_mode                                   = var.app_service_config.workloadMode
   server_farm_resource_id                         = local.resolved_app_service_plan_resource_id
@@ -228,7 +221,7 @@ module "front_door_security_policy" {
   environment_abbreviation   = var.environment_abbreviation
   instance_number            = var.instance_number
   workload_description       = local.normalized_workload_description
-  region_abbreviation        = local.region_abbreviation
+  location                   = var.location
   profile_resource_id        = module.front_door[0].resource_id
   waf_policy_resource_id     = module.front_door_waf_policy[0].resource_id
   domain_resource_ids        = module.front_door[0].afd_endpoint_resource_ids
@@ -247,6 +240,7 @@ module "application_gateway" {
   region_abbreviation              = local.region_abbreviation
   location                         = var.location
   sku                              = var.app_gateway_config.sku
+  scale_mode                       = var.app_gateway_config.scaleMode
   capacity                         = var.app_gateway_config.capacity
   autoscale_min_capacity           = var.app_gateway_config.autoscaleMinCapacity
   autoscale_max_capacity           = var.app_gateway_config.autoscaleMaxCapacity

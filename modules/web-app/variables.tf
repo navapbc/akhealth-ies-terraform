@@ -44,12 +44,18 @@ variable "location" {
   }
 }
 
-variable "kind" {
+variable "workload_mode" {
   type = string
-}
 
-variable "service_plan_kind" {
-  type = string
+  validation {
+    condition = contains([
+      "windowsWebApp",
+      "linuxWebApp",
+      "windowsFunctionApp",
+      "linuxFunctionApp",
+    ], var.workload_mode)
+    error_message = "workload_mode must be one of: windowsWebApp, linuxWebApp, windowsFunctionApp, linuxFunctionApp."
+  }
 }
 
 variable "server_farm_resource_id" {
@@ -162,7 +168,7 @@ variable "default_private_dns_zone_virtual_network_links" {
 
 variable "role_assignments" {
   type = list(object({
-    key                                = optional(string)
+    key                                = string
     roleDefinitionId                   = optional(string)
     roleDefinitionName                 = optional(string)
     principalId                        = string
@@ -178,7 +184,7 @@ variable "role_assignments" {
 
 variable "diagnostic_settings" {
   type = list(object({
-    name                                = optional(string)
+    name                                = string
     workspaceResourceId                 = optional(string)
     logAnalyticsDestinationType         = optional(string)
     storageAccountResourceId            = optional(string)
@@ -204,11 +210,6 @@ variable "lock" {
     notes = optional(string)
   })
   default = null
-}
-
-variable "reserved" {
-  type    = bool
-  default = false
 }
 
 variable "tags" {

@@ -1,7 +1,7 @@
 locals {
-  workload_segment    = var.workload_description == null ? "" : "-${var.workload_description}"
-  shared_name_prefix  = "${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}"
-  shared_name_suffix  = "${local.workload_segment}-${var.instance_number}"
+  workload_segment   = var.workload_description == null ? "" : "-${var.workload_description}"
+  shared_name_prefix = "${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}"
+  shared_name_suffix = "${local.workload_segment}-${var.instance_number}"
 
   names = {
     vnet_spoke      = substr("vnet-${local.shared_name_prefix}${local.shared_name_suffix}", 0, 80)
@@ -295,10 +295,10 @@ module "nsg_diagnostic_settings" {
 
   source = "../common-diagnostic-settings"
 
-  name_prefix        = each.key
   target_resource_id = each.value
   diagnostic_settings = [for diagnostic_setting in var.nsg_diagnostic_settings : merge(diagnostic_setting, {
-    name = "${each.key}-diagnosticSettings"
+    name                = diagnostic_setting.name == null ? "${each.key}-diagnosticSettings" : diagnostic_setting.name
+    workspaceResourceId = diagnostic_setting.workspaceResourceId == null ? var.nsg_diagnostic_default_workspace_resource_id : diagnostic_setting.workspaceResourceId
   })]
 }
 
@@ -325,7 +325,6 @@ module "vnet_role_assignments" {
 module "vnet_diagnostic_settings" {
   source = "../common-diagnostic-settings"
 
-  name_prefix         = local.names.vnet_spoke
   target_resource_id  = azurerm_virtual_network.this.id
   diagnostic_settings = var.vnet_diagnostic_settings
 }

@@ -124,6 +124,22 @@ variable "nsg_diagnostic_settings" {
     })), [])
   }))
   default = []
+
+  validation {
+    condition = (
+      length(var.nsg_diagnostic_settings) <= 1 ||
+      alltrue([
+        for diagnostic_setting in var.nsg_diagnostic_settings :
+        diagnostic_setting.name != null && trimspace(diagnostic_setting.name) != ""
+      ])
+    )
+    error_message = "Multiple nsg_diagnostic_settings entries must each declare an explicit non-empty name."
+  }
+}
+
+variable "nsg_diagnostic_default_workspace_resource_id" {
+  type    = string
+  default = null
 }
 
 variable "hub_peering_config" {
@@ -194,7 +210,7 @@ variable "disable_bgp_route_propagation" {
 
 variable "vnet_role_assignments" {
   type = list(object({
-    key                                = optional(string)
+    key                                = string
     roleDefinitionId                   = optional(string)
     roleDefinitionName                 = optional(string)
     principalId                        = string
@@ -219,14 +235,6 @@ variable "vnet_encryption_enforcement" {
 variable "flow_timeout_in_minutes" {
   type    = number
   default = null
-}
-
-variable "enable_vm_protection" {
-  type = bool
-}
-
-variable "enable_private_endpoint_vnet_policies" {
-  type = string
 }
 
 variable "virtual_network_bgp_community" {

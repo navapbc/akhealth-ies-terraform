@@ -29,7 +29,6 @@ module "role_assignments" {
 module "diagnostic_settings" {
   source = "../common-diagnostic-settings"
 
-  name_prefix         = local.name
   target_resource_id  = azurerm_service_plan.this.id
   diagnostic_settings = var.diagnostic_settings
 }

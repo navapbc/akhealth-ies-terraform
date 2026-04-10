@@ -25,7 +25,7 @@ locals {
   }
   custom_rules = concat(
     var.enable_default_waf_method_block ? [local.default_waf_method_block_rule] : [],
-    var.enable_default_waf_method_block ? [] : var.waf_custom_rules
+    var.waf_custom_rules
   )
 }
 

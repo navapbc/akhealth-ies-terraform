@@ -4,7 +4,7 @@ variable "scope" {
 
 variable "role_assignments" {
   type = list(object({
-    key                                = optional(string)
+    key                                = string
     roleDefinitionId                   = optional(string)
     roleDefinitionName                 = optional(string)
     principalId                        = string
@@ -28,19 +28,19 @@ variable "role_assignments" {
   validation {
     condition = alltrue([
       for assignment in var.role_assignments :
-      assignment.key == null || trimspace(assignment.key) != ""
+      trimspace(assignment.key) != ""
     ])
-    error_message = "Role assignment keys must be omitted or non-empty."
+    error_message = "Role assignment keys must be non-empty."
   }
 
   validation {
-    condition = length(compact([
+    condition = length([
       for assignment in var.role_assignments :
       assignment.key
-      ])) == length(distinct(compact([
+      ]) == length(distinct([
         for assignment in var.role_assignments :
         assignment.key
-    ])))
-    error_message = "Role assignment keys must be unique when provided."
+    ]))
+    error_message = "Role assignment keys must be unique."
   }
 }

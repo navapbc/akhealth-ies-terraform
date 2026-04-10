@@ -15,9 +15,8 @@ locals {
   region_abbreviation           = local.region_abbreviations[var.location]
   workload_segment              = var.workload_description == null ? "" : "-${var.workload_description}"
   name                          = substr("app-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 60)
-  kind_lower                    = lower(var.kind)
-  is_function_app               = strcontains(local.kind_lower, "functionapp")
-  is_linux                      = strcontains(local.kind_lower, "linux") || var.reserved || lower(var.service_plan_kind) == "linux"
+  is_function_app               = contains(["windowsFunctionApp", "linuxFunctionApp"], var.workload_mode)
+  is_linux                      = contains(["linuxWebApp", "linuxFunctionApp"], var.workload_mode)
   create_private_endpoint       = var.enable_default_private_endpoint
   identity_enabled              = var.managed_identities != null && var.managed_identities.systemAssigned
   public_network_access_enabled = var.public_network_access == null ? null : var.public_network_access == "Enabled"
@@ -260,7 +259,6 @@ module "role_assignments" {
 module "diagnostic_settings" {
   source = "../common-diagnostic-settings"
 
-  name_prefix         = local.name
   target_resource_id  = local.app_id
   diagnostic_settings = var.diagnostic_settings
 }

@@ -2,6 +2,7 @@ locals {
   workload_segment    = var.workload_description == null ? "" : "-${var.workload_description}"
   name                = substr("agw-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 80)
   identity_enabled    = var.managed_identities.systemAssigned
+  autoscale_enabled   = var.scale_mode == "autoscale"
 }
 
 resource "azurerm_application_gateway" "this" {
@@ -17,11 +18,11 @@ resource "azurerm_application_gateway" "this" {
   sku {
     name     = var.sku
     tier     = var.sku
-    capacity = var.capacity
+    capacity = local.autoscale_enabled ? null : var.capacity
   }
 
   dynamic "autoscale_configuration" {
-    for_each = [1]
+    for_each = local.autoscale_enabled ? [1] : []
     content {
       min_capacity = var.autoscale_min_capacity
       max_capacity = var.autoscale_max_capacity
@@ -128,6 +129,24 @@ resource "azurerm_application_gateway" "this" {
       url_path_map_name           = request_routing_rule.value.urlPathMapName
     }
   }
+
+  lifecycle {
+    precondition {
+      condition = (
+        var.scale_mode == "fixed" &&
+        var.capacity != null &&
+        var.autoscale_min_capacity == null &&
+        var.autoscale_max_capacity == null
+      ) || (
+        var.scale_mode == "autoscale" &&
+        var.capacity == null &&
+        var.autoscale_min_capacity != null &&
+        var.autoscale_max_capacity != null &&
+        var.autoscale_max_capacity >= var.autoscale_min_capacity
+      )
+      error_message = "Application Gateway scaling must be explicit: fixed mode requires capacity only, and autoscale mode requires autoscale_min_capacity and autoscale_max_capacity only."
+    }
+  }
 }
 
 module "role_assignments" {
@@ -140,7 +159,6 @@ module "role_assignments" {
 module "diagnostic_settings" {
   source = "../common-diagnostic-settings"
 
-  name_prefix         = local.name
   target_resource_id  = azurerm_application_gateway.this.id
   diagnostic_settings = var.diagnostic_settings
 }

@@ -1,14 +1,14 @@
 locals {
   diagnostic_settings = {
-    for index, diagnostic_setting in var.diagnostic_settings :
-    coalesce(diagnostic_setting.name, tostring(index)) => diagnostic_setting
+    for diagnostic_setting in var.diagnostic_settings :
+    diagnostic_setting.name => diagnostic_setting
   }
 }
 
 resource "azurerm_monitor_diagnostic_setting" "this" {
   for_each = local.diagnostic_settings
 
-  name                           = coalesce(each.value.name, "${var.name_prefix}-${each.key}")
+  name                           = each.value.name
   target_resource_id             = var.target_resource_id
   log_analytics_workspace_id     = each.value.workspaceResourceId
   log_analytics_destination_type = each.value.logAnalyticsDestinationType

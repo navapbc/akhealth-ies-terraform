@@ -51,6 +51,17 @@ variable "waf_custom_rules" {
     })), [])
   }))
   default = []
+
+  validation {
+    condition = (
+      !var.enable_default_waf_method_block ||
+      alltrue([
+        for rule in var.waf_custom_rules :
+        rule.name != "BlockMethod" && rule.priority != 10
+      ])
+    )
+    error_message = "When enable_default_waf_method_block is true, waf_custom_rules must not reuse the default BlockMethod rule name or priority 10."
+  }
 }
 
 variable "waf_policy_settings" {

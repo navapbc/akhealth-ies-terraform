@@ -1,6 +1,7 @@
 locals {
+  region_abbreviation = "global"
   workload_segment    = var.workload_description == null ? "" : "-${var.workload_description}"
-  name                = substr("afd-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 260)
+  name                = substr("afd-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 260)
   origin_groups = {
     for origin_group in var.origin_groups :
     origin_group.name => origin_group
@@ -8,7 +9,7 @@ locals {
   endpoints = {
     for endpoint in var.afd_endpoints :
     endpoint.name => merge(endpoint, {
-      resolved_name = substr("fde-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-${endpoint.name}-${var.instance_number}", 0, 260)
+      resolved_name = substr("fde-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}-${endpoint.name}-${var.instance_number}", 0, 260)
     })
   }
   routes = merge([
@@ -132,7 +133,6 @@ module "role_assignments" {
 module "diagnostic_settings" {
   source = "../common-diagnostic-settings"
 
-  name_prefix         = local.name
   target_resource_id  = azurerm_cdn_frontdoor_profile.this.id
   diagnostic_settings = var.diagnostic_settings
 }

@@ -1,14 +1,10 @@
-variable "name_prefix" {
-  type = string
-}
-
 variable "target_resource_id" {
   type = string
 }
 
 variable "diagnostic_settings" {
   type = list(object({
-    name                                = optional(string)
+    name                                = string
     workspaceResourceId                 = optional(string)
     logAnalyticsDestinationType         = optional(string)
     storageAccountResourceId            = optional(string)
@@ -74,19 +70,19 @@ variable "diagnostic_settings" {
   validation {
     condition = alltrue([
       for diagnostic_setting in var.diagnostic_settings :
-      diagnostic_setting.name == null || trimspace(diagnostic_setting.name) != ""
+      trimspace(diagnostic_setting.name) != ""
     ])
-    error_message = "diagnostic setting names must be omitted or non-empty."
+    error_message = "diagnostic setting names must be non-empty."
   }
 
   validation {
-    condition = length(compact([
+    condition = length([
       for diagnostic_setting in var.diagnostic_settings :
       diagnostic_setting.name
-      ])) == length(distinct(compact([
+      ]) == length(distinct([
         for diagnostic_setting in var.diagnostic_settings :
         diagnostic_setting.name
-    ])))
+    ]))
     error_message = "diagnostic setting names must be unique when provided."
   }
 }

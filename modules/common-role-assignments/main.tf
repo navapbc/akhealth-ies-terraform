@@ -1,7 +1,7 @@
 locals {
   assignments = {
-    for index, assignment in var.role_assignments :
-    coalesce(assignment.key, assignment.name, tostring(index)) => assignment
+    for assignment in var.role_assignments :
+    assignment.key => assignment
   }
 }
 

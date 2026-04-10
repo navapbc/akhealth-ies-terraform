@@ -122,24 +122,22 @@ variable "spoke_network_config" {
     egressFirewallConfig = optional(object({
       internalIp = string
     }))
-    ingressOption                     = string
-    enableEgressLockdown              = bool
-    dnsServers                        = list(string)
-    ddosProtectionPlanResourceId      = optional(string)
-    disableBgpRoutePropagation        = bool
-    encryption                        = bool
-    encryptionEnforcement             = string
-    flowTimeoutInMinutes              = optional(number)
-    enableVmProtection                = bool
-    enablePrivateEndpointVNetPolicies = string
-    bgpCommunity                      = optional(string)
+    ingressOption                = string
+    enableEgressLockdown         = bool
+    dnsServers                   = list(string)
+    ddosProtectionPlanResourceId = optional(string)
+    disableBgpRoutePropagation   = bool
+    encryption                   = bool
+    encryptionEnforcement        = string
+    flowTimeoutInMinutes         = optional(number)
+    bgpCommunity                 = optional(string)
     lock = optional(object({
       kind  = string
       name  = optional(string)
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      key                                = optional(string)
+      key                                = string
       roleDefinitionId                   = optional(string)
       roleDefinitionName                 = optional(string)
       principalId                        = string
@@ -227,7 +225,7 @@ variable "service_plan_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      key                                = optional(string)
+      key                                = string
       roleDefinitionId                   = optional(string)
       roleDefinitionName                 = optional(string)
       principalId                        = string
@@ -322,7 +320,7 @@ variable "app_service_config" {
       })), [])
     })), [])
     roleAssignments = optional(list(object({
-      key                                = optional(string)
+      key                                = string
       roleDefinitionId                   = optional(string)
       roleDefinitionName                 = optional(string)
       principalId                        = string
@@ -408,7 +406,7 @@ variable "key_vault_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      key                                = optional(string)
+      key                                = string
       roleDefinitionId                   = optional(string)
       roleDefinitionName                 = optional(string)
       principalId                        = string
@@ -456,7 +454,7 @@ variable "app_insights_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      key                                = optional(string)
+      key                                = string
       roleDefinitionId                   = optional(string)
       roleDefinitionName                 = optional(string)
       principalId                        = string
@@ -508,27 +506,17 @@ variable "app_insights_config" {
 
 variable "app_gateway_config" {
   type = object({
-    sku                         = string
-    capacity                    = number
-    autoscaleMinCapacity        = number
-    autoscaleMaxCapacity        = number
-    availabilityZones           = list(number)
-    sslPolicyType               = string
-    sslPolicyName               = string
-    sslPolicyMinProtocolVersion = string
-    sslPolicyCipherSuites       = list(string)
-    sslCertificates             = list(object({ name = string, properties = any }))
+    sku                  = string
+    scaleMode            = string
+    capacity             = optional(number)
+    autoscaleMinCapacity = optional(number)
+    autoscaleMaxCapacity = optional(number)
+    availabilityZones    = list(number)
     managedIdentities = object({
       systemAssigned = bool
     })
-    trustedRootCertificates    = list(object({ name = string, properties = any }))
-    authenticationCertificates = list(object({ name = string, properties = any }))
-    customErrorConfigurations  = list(object({ properties = any }))
-    enableHttp2                = bool
-    enableFips                 = bool
-    enableRequestBuffering     = bool
-    enableResponseBuffering    = bool
-    loadDistributionPolicies   = list(object({ name = string, properties = any }))
+    enableHttp2 = bool
+    enableFips  = bool
     gatewayIPConfigurations = list(object({
       name             = string
       subnetResourceId = string
@@ -583,15 +571,6 @@ variable "app_gateway_config" {
       requireServerNameIndication = optional(bool)
       sslCertificateName          = optional(string)
     }))
-    privateEndpoints          = list(object({ name = string, properties = any }))
-    privateLinkConfigurations = list(object({ name = string, properties = any }))
-    redirectConfigurations    = list(object({ name = string, properties = any }))
-    rewriteRuleSets           = list(object({ name = string, properties = any }))
-    sslProfiles               = list(object({ name = string, properties = any }))
-    trustedClientCertificates = list(object({ name = string, properties = any }))
-    urlPathMaps               = list(object({ name = string, properties = any }))
-    backendSettingsCollection = list(object({ name = string, properties = any }))
-    listeners                 = list(object({ name = string, properties = any }))
     requestRoutingRules = list(object({
       name                      = string
       priority                  = optional(number)
@@ -602,9 +581,8 @@ variable "app_gateway_config" {
       redirectConfigurationName = optional(string)
       urlPathMapName            = optional(string)
     }))
-    routingRules = list(object({ name = string, properties = any }))
     roleAssignments = optional(list(object({
-      key                                = optional(string)
+      key                                = string
       roleDefinitionId                   = optional(string)
       roleDefinitionName                 = optional(string)
       principalId                        = string
@@ -616,7 +594,7 @@ variable "app_gateway_config" {
       name                               = optional(string)
     })), [])
     diagnosticSettings = optional(list(object({
-      name                                = optional(string)
+      name                                = string
       workspaceResourceId                 = optional(string)
       logAnalyticsDestinationType         = optional(string)
       storageAccountResourceId            = optional(string)
@@ -637,19 +615,29 @@ variable "app_gateway_config" {
       name  = optional(string)
       notes = optional(string)
     }))
-    wafPolicySettings = object({
-      mode                   = string
-      state                  = string
-      requestBodyCheck       = bool
-      maxRequestBodySizeInKb = number
-      fileUploadLimitInMb    = number
-    })
-    wafManagedRuleSets = list(object({
-      ruleSetType    = string
-      ruleSetVersion = string
-    }))
   })
   description = "Azure native Application Gateway configuration object."
+
+  validation {
+    condition     = contains(["fixed", "autoscale"], var.app_gateway_config.scaleMode)
+    error_message = "app_gateway_config.scaleMode must be fixed or autoscale."
+  }
+
+  validation {
+    condition = (
+      var.app_gateway_config.scaleMode == "fixed" &&
+      var.app_gateway_config.capacity != null &&
+      var.app_gateway_config.autoscaleMinCapacity == null &&
+      var.app_gateway_config.autoscaleMaxCapacity == null
+      ) || (
+      var.app_gateway_config.scaleMode == "autoscale" &&
+      var.app_gateway_config.capacity == null &&
+      var.app_gateway_config.autoscaleMinCapacity != null &&
+      var.app_gateway_config.autoscaleMaxCapacity != null &&
+      var.app_gateway_config.autoscaleMaxCapacity >= var.app_gateway_config.autoscaleMinCapacity
+    )
+    error_message = "app_gateway_config must declare one explicit scale mode: fixed requires capacity only, and autoscale requires autoscaleMinCapacity and autoscaleMaxCapacity only."
+  }
 }
 
 variable "front_door_config" {
@@ -676,7 +664,7 @@ variable "front_door_config" {
       })), [])
     })), [])
     roleAssignments = optional(list(object({
-      key                                = optional(string)
+      key                                = string
       roleDefinitionId                   = optional(string)
       roleDefinitionName                 = optional(string)
       principalId                        = string
@@ -788,7 +776,7 @@ variable "ase_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      key                                = optional(string)
+      key                                = string
       roleDefinitionId                   = optional(string)
       roleDefinitionName                 = optional(string)
       principalId                        = string
@@ -859,7 +847,7 @@ variable "postgresql_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      key                                = optional(string)
+      key                                = string
       roleDefinitionId                   = optional(string)
       roleDefinitionName                 = optional(string)
       principalId                        = string
@@ -946,7 +934,7 @@ variable "log_analytics_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      key                                = optional(string)
+      key                                = string
       roleDefinitionId                   = optional(string)
       roleDefinitionName                 = optional(string)
       principalId                        = string

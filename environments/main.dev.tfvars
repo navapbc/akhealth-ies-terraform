@@ -50,7 +50,7 @@ service_plan_config = {
   skuCapacity               = 1
   zoneRedundant             = false
   kind                      = "windows"
-  existingPlanId            = ""
+  existingPlanId            = null
   elasticScaleEnabled       = false
   maximumElasticWorkerCount = 1
   perSiteScaling            = false
@@ -60,7 +60,7 @@ service_plan_config = {
 }
 
 app_service_config = {
-  kind                              = "app"
+  workloadMode                      = "windowsWebApp"
   httpsOnly                         = true
   clientCertEnabled                 = false
   disableBasicPublishingCredentials = true
@@ -80,7 +80,6 @@ app_service_config = {
   }
   enabled                           = true
   storageAccountRequired            = false
-  reserved                          = false
   clientAffinityEnabled             = false
   clientAffinityProxyEnabled        = true
   clientAffinityPartitioningEnabled = false
@@ -150,27 +149,16 @@ postgresql_config = {
 }
 
 app_gateway_config = {
-  sku                         = "WAF_v2"
-  capacity                    = 2
-  autoscaleMinCapacity        = 2
-  autoscaleMaxCapacity        = 10
-  availabilityZones           = [1, 2, 3]
-  sslPolicyType               = "Custom"
-  sslPolicyName               = ""
-  sslPolicyMinProtocolVersion = "TLSv1_2"
-  sslPolicyCipherSuites       = []
-  sslCertificates             = []
+  sku                  = "WAF_v2"
+  scaleMode            = "autoscale"
+  autoscaleMinCapacity = 2
+  autoscaleMaxCapacity = 10
+  availabilityZones    = [1, 2, 3]
   managedIdentities = {
     systemAssigned = false
   }
-  trustedRootCertificates       = []
-  authenticationCertificates    = []
-  customErrorConfigurations     = []
-  enableHttp2                   = true
-  enableFips                    = false
-  enableRequestBuffering        = false
-  enableResponseBuffering       = false
-  loadDistributionPolicies      = []
+  enableHttp2 = true
+  enableFips  = false
   gatewayIPConfigurations       = []
   frontendIPConfigurations      = []
   frontendPorts                 = []
@@ -178,36 +166,9 @@ app_gateway_config = {
   backendHttpSettingsCollection = []
   probes                        = []
   httpListeners                 = []
-  privateEndpoints              = []
-  privateLinkConfigurations     = []
-  redirectConfigurations        = []
-  rewriteRuleSets               = []
-  sslProfiles                   = []
-  trustedClientCertificates     = []
-  urlPathMaps                   = []
-  backendSettingsCollection     = []
-  listeners                     = []
   requestRoutingRules           = []
-  routingRules                  = []
   roleAssignments               = []
   diagnosticSettings            = []
-  wafPolicySettings = {
-    mode                   = "Prevention"
-    state                  = "Enabled"
-    requestBodyCheck       = true
-    maxRequestBodySizeInKb = 128
-    fileUploadLimitInMb    = 100
-  }
-  wafManagedRuleSets = [
-    {
-      ruleSetType    = "OWASP"
-      ruleSetVersion = "3.2"
-    },
-    {
-      ruleSetType    = "Microsoft_BotManagerRuleSet"
-      ruleSetVersion = "1.0"
-    }
-  ]
 }
 
 front_door_config = {

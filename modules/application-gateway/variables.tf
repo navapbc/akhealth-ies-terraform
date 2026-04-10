@@ -36,16 +36,28 @@ variable "sku" {
   type = string
 }
 
+variable "scale_mode" {
+  type = string
+
+  validation {
+    condition     = contains(["fixed", "autoscale"], var.scale_mode)
+    error_message = "scale_mode must be either fixed or autoscale."
+  }
+}
+
 variable "capacity" {
-  type = number
+  type    = number
+  default = null
 }
 
 variable "autoscale_min_capacity" {
-  type = number
+  type    = number
+  default = null
 }
 
 variable "autoscale_max_capacity" {
-  type = number
+  type    = number
+  default = null
 }
 
 variable "enable_http2" {
@@ -71,6 +83,11 @@ variable "gateway_ip_configurations" {
     subnetResourceId = string
   }))
   default = []
+
+  validation {
+    condition     = length(var.gateway_ip_configurations) > 0
+    error_message = "gateway_ip_configurations must declare at least one gateway subnet configuration."
+  }
 }
 
 variable "frontend_ip_configurations" {
@@ -82,6 +99,14 @@ variable "frontend_ip_configurations" {
     privateIpAllocationMethod = optional(string)
   }))
   default = []
+
+  validation {
+    condition = alltrue([
+      for configuration in var.frontend_ip_configurations :
+      ((configuration.subnetResourceId != null) != (configuration.publicIpAddressResourceId != null))
+    ])
+    error_message = "Each frontend_ip_configuration must set exactly one of subnetResourceId or publicIpAddressResourceId."
+  }
 }
 
 variable "frontend_ports" {
@@ -101,6 +126,19 @@ variable "backend_address_pools" {
     })), [])
   }))
   default = []
+
+  validation {
+    condition = alltrue(flatten([
+      for pool in var.backend_address_pools : [
+        for address in pool.backendAddresses :
+        length(compact([
+          address.fqdn,
+          address.ipAddress,
+        ])) == 1
+      ]
+    ]))
+    error_message = "Each backend address must set exactly one of fqdn or ipAddress."
+  }
 }
 
 variable "backend_http_settings_collection" {
@@ -145,6 +183,14 @@ variable "http_listeners" {
     sslCertificateName          = optional(string)
   }))
   default = []
+
+  validation {
+    condition = alltrue([
+      for listener in var.http_listeners :
+      !(listener.hostName != null && listener.hostNames != null)
+    ])
+    error_message = "Each http_listener may set hostName or hostNames, but not both."
+  }
 }
 
 variable "request_routing_rules" {
@@ -159,6 +205,36 @@ variable "request_routing_rules" {
     urlPathMapName            = optional(string)
   }))
   default = []
+
+  validation {
+    condition = alltrue([
+      for rule in var.request_routing_rules :
+      (
+        rule.ruleType == "Basic" &&
+        (
+          (
+            rule.backendAddressPoolName != null &&
+            rule.backendHttpSettingsName != null &&
+            rule.redirectConfigurationName == null &&
+            rule.urlPathMapName == null
+          ) ||
+          (
+            rule.backendAddressPoolName == null &&
+            rule.backendHttpSettingsName == null &&
+            rule.redirectConfigurationName != null &&
+            rule.urlPathMapName == null
+          )
+        )
+      ) || (
+        rule.ruleType == "PathBasedRouting" &&
+        rule.urlPathMapName != null &&
+        rule.backendAddressPoolName == null &&
+        rule.backendHttpSettingsName == null &&
+        rule.redirectConfigurationName == null
+      )
+    ])
+    error_message = "request_routing_rules must declare one explicit routing shape: Basic rules need backendAddressPoolName/backendHttpSettingsName or redirectConfigurationName, and PathBasedRouting rules need urlPathMapName."
+  }
 }
 
 variable "managed_identities" {
@@ -169,7 +245,7 @@ variable "managed_identities" {
 
 variable "role_assignments" {
   type = list(object({
-    key                                = optional(string)
+    key                                = string
     roleDefinitionId                   = optional(string)
     roleDefinitionName                 = optional(string)
     principalId                        = string
@@ -178,14 +254,14 @@ variable "role_assignments" {
     condition                          = optional(string)
     conditionVersion                   = optional(string)
     delegatedManagedIdentityResourceId = optional(string)
-    name                               = optional(string)
+    name                                = string
   }))
   default = []
 }
 
 variable "diagnostic_settings" {
   type = list(object({
-    name                                = optional(string)
+    name                                = string
     workspaceResourceId                 = optional(string)
     logAnalyticsDestinationType         = optional(string)
     storageAccountResourceId            = optional(string)
@@ -207,7 +283,7 @@ variable "diagnostic_settings" {
 variable "lock" {
   type = object({
     kind  = string
-    name  = optional(string)
+    name                                = string
     notes = optional(string)
   })
   default = null

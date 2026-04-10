@@ -131,7 +131,7 @@ variable "lock" {
 
 variable "role_assignments" {
   type = list(object({
-    key                                = optional(string)
+    key                                = string
     roleDefinitionId                   = optional(string)
     roleDefinitionName                 = optional(string)
     principalId                        = string
@@ -177,7 +177,7 @@ variable "tags" {
 
 variable "diagnostic_settings" {
   type = list(object({
-    name                                = optional(string)
+    name                                = string
     workspaceResourceId                 = optional(string)
     logAnalyticsDestinationType         = optional(string)
     storageAccountResourceId            = optional(string)

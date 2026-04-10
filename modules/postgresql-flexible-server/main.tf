@@ -107,7 +107,6 @@ module "role_assignments" {
 module "diagnostic_settings" {
   source = "../common-diagnostic-settings"
 
-  name_prefix         = local.name
   target_resource_id  = azurerm_postgresql_flexible_server.this.id
   diagnostic_settings = var.diagnostic_settings
 }
