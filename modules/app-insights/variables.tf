@@ -29,6 +29,11 @@ variable "workspace_resource_id" {
 
 variable "application_type" {
   type = string
+
+  validation {
+    condition     = contains(["web", "other"], var.application_type)
+    error_message = "application_type must be one of: web, other. Use lowercase values."
+  }
 }
 
 variable "disable_ip_masking" {
@@ -45,10 +50,20 @@ variable "force_customer_storage_for_profiler" {
 
 variable "public_network_access_for_ingestion" {
   type = string
+
+  validation {
+    condition     = contains(["Enabled", "Disabled"], var.public_network_access_for_ingestion)
+    error_message = "public_network_access_for_ingestion must be either Enabled or Disabled."
+  }
 }
 
 variable "public_network_access_for_query" {
   type = string
+
+  validation {
+    condition     = contains(["Enabled", "Disabled"], var.public_network_access_for_query)
+    error_message = "public_network_access_for_query must be either Enabled or Disabled."
+  }
 }
 
 variable "retention_in_days" {
@@ -57,6 +72,11 @@ variable "retention_in_days" {
 
 variable "sampling_percentage" {
   type = number
+
+  validation {
+    condition     = var.sampling_percentage >= 0 && var.sampling_percentage <= 100
+    error_message = "sampling_percentage must be between 0 and 100."
+  }
 }
 
 variable "lock" {

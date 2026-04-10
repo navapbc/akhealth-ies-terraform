@@ -109,6 +109,7 @@ key_vault_config = {
 }
 
 app_insights_config = {
+  # Must be lowercase. The Terraform contract validates AzureRM-supported values directly.
   applicationType                 = "web"
   publicNetworkAccessForIngestion = "Enabled"
   publicNetworkAccessForQuery     = "Enabled"
@@ -117,7 +118,6 @@ app_insights_config = {
   disableLocalAuth                = true
   disableIpMasking                = true
   forceCustomerStorageForProfiler = false
-  kind                            = "web"
   roleAssignments                 = []
   diagnosticSettings              = []
 }
@@ -309,20 +309,11 @@ ase_config = {
       value = "1"
     }
   ]
-  customDnsSuffix                    = ""
-  ipsslAddressCount                  = 0
-  multiSize                          = ""
-  customDnsSuffixCertificateUrl      = ""
   dedicatedHostCount                 = 0
-  dnsSuffix                          = ""
-  frontEndScaleFactor                = 15
   internalLoadBalancingMode          = "Web, Publishing"
   zoneRedundant                      = true
   allowNewPrivateEndpointConnections = true
-  ftpEnabled                         = false
-  inboundIpAddressOverride           = ""
   remoteDebugEnabled                 = false
-  upgradePreference                  = "None"
   roleAssignments                    = []
   diagnosticSettings                 = []
 }

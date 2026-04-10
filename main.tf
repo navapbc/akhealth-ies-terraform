@@ -67,21 +67,23 @@ module "app_service_environment" {
   count  = var.deploy_ase_v3 ? 1 : 0
   source = "./modules/app-service-environment"
 
-  resource_group_name          = azurerm_resource_group.spoke.name
-  system_abbreviation          = var.system_abbreviation
-  environment_abbreviation     = var.environment_abbreviation
-  instance_number              = var.instance_number
-  workload_description         = var.workload_description
-  location                     = var.location
-  subnet_resource_id           = module.network.snet_appsvc_resource_id
-  cluster_settings             = var.ase_config.clusterSettings
-  dedicated_host_count         = var.ase_config.dedicatedHostCount
-  internal_load_balancing_mode = var.ase_config.internalLoadBalancingMode
-  zone_redundant               = var.ase_config.zoneRedundant
-  role_assignments             = var.ase_config.roleAssignments
-  diagnostic_settings          = var.ase_config.diagnosticSettings
-  lock                         = var.ase_config.lock
-  tags                         = var.tags
+  resource_group_name                    = azurerm_resource_group.spoke.name
+  system_abbreviation                    = var.system_abbreviation
+  environment_abbreviation               = var.environment_abbreviation
+  instance_number                        = var.instance_number
+  workload_description                   = var.workload_description
+  location                               = var.location
+  subnet_resource_id                     = module.network.snet_appsvc_resource_id
+  cluster_settings                       = var.ase_config.clusterSettings
+  dedicated_host_count                   = var.ase_config.dedicatedHostCount
+  internal_load_balancing_mode           = var.ase_config.internalLoadBalancingMode
+  allow_new_private_endpoint_connections = var.ase_config.allowNewPrivateEndpointConnections
+  remote_debugging_enabled               = var.ase_config.remoteDebugEnabled
+  zone_redundant                         = var.ase_config.zoneRedundant
+  role_assignments                       = var.ase_config.roleAssignments
+  diagnostic_settings                    = var.ase_config.diagnosticSettings
+  lock                                   = var.ase_config.lock
+  tags                                   = var.tags
 }
 
 module "app_insights" {

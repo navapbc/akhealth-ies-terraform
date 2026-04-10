@@ -18,16 +18,18 @@ locals {
 }
 
 resource "azurerm_app_service_environment_v3" "this" {
-  name                         = local.name
-  resource_group_name          = var.resource_group_name
-  subnet_id                    = var.subnet_resource_id
-  internal_load_balancing_mode = try(var.internal_load_balancing_mode, null)
-  zone_redundant               = try(var.zone_redundant, null)
-  dedicated_host_count         = try(var.dedicated_host_count, null)
-  tags                         = var.tags
+  name                                   = local.name
+  resource_group_name                    = var.resource_group_name
+  subnet_id                              = var.subnet_resource_id
+  internal_load_balancing_mode           = var.internal_load_balancing_mode
+  zone_redundant                         = var.zone_redundant
+  dedicated_host_count                   = var.dedicated_host_count
+  allow_new_private_endpoint_connections = var.allow_new_private_endpoint_connections
+  remote_debugging_enabled               = var.remote_debugging_enabled
+  tags                                   = var.tags
 
   dynamic "cluster_setting" {
-    for_each = try(var.cluster_settings, [])
+    for_each = var.cluster_settings
     content {
       name  = cluster_setting.value.name
       value = cluster_setting.value.value

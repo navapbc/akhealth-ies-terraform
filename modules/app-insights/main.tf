@@ -22,7 +22,7 @@ resource "azurerm_application_insights" "this" {
   location                            = var.location
   resource_group_name                 = var.resource_group_name
   workspace_id                        = var.workspace_resource_id
-  application_type                    = lower(var.application_type)
+  application_type                    = var.application_type
   retention_in_days                   = var.retention_in_days
   sampling_percentage                 = var.sampling_percentage
   disable_ip_masking                  = var.disable_ip_masking

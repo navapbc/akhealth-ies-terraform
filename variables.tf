@@ -375,12 +375,6 @@ variable "app_insights_config" {
     disableLocalAuth                = bool
     disableIpMasking                = bool
     forceCustomerStorageForProfiler = bool
-    linkedStorageAccountResourceId  = optional(string)
-    flowType                        = optional(string)
-    requestSource                   = optional(string)
-    kind                            = string
-    immediatePurgeDataOn30Days      = optional(bool)
-    ingestionMode                   = optional(string)
     lock = optional(object({
       kind  = string
       name  = optional(string)
@@ -415,6 +409,24 @@ variable "app_insights_config" {
     })), [])
   })
   description = "Azure native Application Insights configuration object."
+
+  validation {
+    condition     = contains(["web", "other"], var.app_insights_config.applicationType)
+    error_message = "app_insights_config.applicationType must be one of: web, other. Use lowercase values in tfvars."
+  }
+
+  validation {
+    condition = (
+      contains(["Enabled", "Disabled"], var.app_insights_config.publicNetworkAccessForIngestion) &&
+      contains(["Enabled", "Disabled"], var.app_insights_config.publicNetworkAccessForQuery)
+    )
+    error_message = "app_insights_config public network access values must be either Enabled or Disabled."
+  }
+
+  validation {
+    condition     = var.app_insights_config.samplingPercentage >= 0 && var.app_insights_config.samplingPercentage <= 100
+    error_message = "app_insights_config.samplingPercentage must be between 0 and 100."
+  }
 }
 
 variable "app_gateway_config" {
@@ -432,32 +444,88 @@ variable "app_gateway_config" {
     managedIdentities = object({
       systemAssigned = bool
     })
-    trustedRootCertificates       = list(object({ name = string, properties = any }))
-    authenticationCertificates    = list(object({ name = string, properties = any }))
-    customErrorConfigurations     = list(object({ properties = any }))
-    enableHttp2                   = bool
-    enableFips                    = bool
-    enableRequestBuffering        = bool
-    enableResponseBuffering       = bool
-    loadDistributionPolicies      = list(object({ name = string, properties = any }))
-    gatewayIPConfigurations       = list(object({ name = string, properties = object({ subnet = object({ id = string }) }) }))
-    frontendIPConfigurations      = list(object({ name = string, properties = any }))
-    frontendPorts                 = list(object({ name = string, properties = object({ port = number }) }))
-    backendAddressPools           = list(object({ name = string, properties = any }))
-    backendHttpSettingsCollection = list(object({ name = string, properties = any }))
-    probes                        = list(object({ name = string, properties = any }))
-    httpListeners                 = list(object({ name = string, properties = any }))
-    privateEndpoints              = list(object({ name = string, properties = any }))
-    privateLinkConfigurations     = list(object({ name = string, properties = any }))
-    redirectConfigurations        = list(object({ name = string, properties = any }))
-    rewriteRuleSets               = list(object({ name = string, properties = any }))
-    sslProfiles                   = list(object({ name = string, properties = any }))
-    trustedClientCertificates     = list(object({ name = string, properties = any }))
-    urlPathMaps                   = list(object({ name = string, properties = any }))
-    backendSettingsCollection     = list(object({ name = string, properties = any }))
-    listeners                     = list(object({ name = string, properties = any }))
-    requestRoutingRules           = list(object({ name = string, properties = any }))
-    routingRules                  = list(object({ name = string, properties = any }))
+    trustedRootCertificates    = list(object({ name = string, properties = any }))
+    authenticationCertificates = list(object({ name = string, properties = any }))
+    customErrorConfigurations  = list(object({ properties = any }))
+    enableHttp2                = bool
+    enableFips                 = bool
+    enableRequestBuffering     = bool
+    enableResponseBuffering    = bool
+    loadDistributionPolicies   = list(object({ name = string, properties = any }))
+    gatewayIPConfigurations = list(object({
+      name             = string
+      subnetResourceId = string
+    }))
+    frontendIPConfigurations = list(object({
+      name                      = string
+      subnetResourceId          = optional(string)
+      publicIpAddressResourceId = optional(string)
+      privateIpAddress          = optional(string)
+      privateIpAllocationMethod = optional(string)
+    }))
+    frontendPorts = list(object({
+      name = string
+      port = number
+    }))
+    backendAddressPools = list(object({
+      name = string
+      backendAddresses = optional(list(object({
+        fqdn      = optional(string)
+        ipAddress = optional(string)
+      })), [])
+    }))
+    backendHttpSettingsCollection = list(object({
+      name                           = string
+      cookieBasedAffinity            = optional(string)
+      path                           = optional(string)
+      port                           = number
+      protocol                       = string
+      requestTimeout                 = optional(number)
+      probeName                      = optional(string)
+      hostName                       = optional(string)
+      pickHostNameFromBackendAddress = optional(bool)
+    }))
+    probes = list(object({
+      name                                = string
+      protocol                            = string
+      path                                = string
+      interval                            = number
+      timeout                             = number
+      unhealthyThreshold                  = number
+      host                                = optional(string)
+      pickHostNameFromBackendHttpSettings = optional(bool)
+      minimumServers                      = optional(number)
+    }))
+    httpListeners = list(object({
+      name                        = string
+      frontendIpConfigurationName = string
+      frontendPortName            = string
+      protocol                    = string
+      hostName                    = optional(string)
+      hostNames                   = optional(list(string))
+      requireServerNameIndication = optional(bool)
+      sslCertificateName          = optional(string)
+    }))
+    privateEndpoints          = list(object({ name = string, properties = any }))
+    privateLinkConfigurations = list(object({ name = string, properties = any }))
+    redirectConfigurations    = list(object({ name = string, properties = any }))
+    rewriteRuleSets           = list(object({ name = string, properties = any }))
+    sslProfiles               = list(object({ name = string, properties = any }))
+    trustedClientCertificates = list(object({ name = string, properties = any }))
+    urlPathMaps               = list(object({ name = string, properties = any }))
+    backendSettingsCollection = list(object({ name = string, properties = any }))
+    listeners                 = list(object({ name = string, properties = any }))
+    requestRoutingRules = list(object({
+      name                      = string
+      priority                  = optional(number)
+      ruleType                  = string
+      httpListenerName          = string
+      backendAddressPoolName    = optional(string)
+      backendHttpSettingsName   = optional(string)
+      redirectConfigurationName = optional(string)
+      urlPathMapName            = optional(string)
+    }))
+    routingRules = list(object({ name = string, properties = any }))
     roleAssignments = optional(list(object({
       roleDefinitionIdOrName             = string
       principalId                        = string
@@ -651,20 +719,11 @@ variable "ase_config" {
       name  = string
       value = string
     }))
-    customDnsSuffix                    = string
-    ipsslAddressCount                  = number
-    multiSize                          = string
-    customDnsSuffixCertificateUrl      = string
     dedicatedHostCount                 = number
-    dnsSuffix                          = string
-    frontEndScaleFactor                = number
     internalLoadBalancingMode          = string
     zoneRedundant                      = bool
     allowNewPrivateEndpointConnections = bool
-    ftpEnabled                         = bool
-    inboundIpAddressOverride           = string
     remoteDebugEnabled                 = bool
-    upgradePreference                  = string
     lock = optional(object({
       kind  = string
       name  = optional(string)
@@ -698,7 +757,7 @@ variable "ase_config" {
       })), [])
     })), [])
   })
-  description = "Azure native App Service Environment configuration object."
+  description = "AzureRM-supported App Service Environment configuration object."
 }
 
 variable "postgresql_admin_group_config" {

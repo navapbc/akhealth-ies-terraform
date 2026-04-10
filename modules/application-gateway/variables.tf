@@ -32,28 +32,23 @@ variable "capacity" {
 }
 
 variable "autoscale_min_capacity" {
-  type    = number
-  default = null
+  type = number
 }
 
 variable "autoscale_max_capacity" {
-  type    = number
-  default = null
+  type = number
 }
 
 variable "enable_http2" {
-  type    = bool
-  default = false
+  type = bool
 }
 
 variable "enable_fips" {
-  type    = bool
-  default = false
+  type = bool
 }
 
 variable "availability_zones" {
-  type    = list(number)
-  default = []
+  type = list(number)
 }
 
 variable "firewall_policy_resource_id" {
@@ -63,20 +58,19 @@ variable "firewall_policy_resource_id" {
 
 variable "gateway_ip_configurations" {
   type = list(object({
-    name = string
-    properties = object({
-      subnet = object({
-        id = string
-      })
-    })
+    name             = string
+    subnetResourceId = string
   }))
   default = []
 }
 
 variable "frontend_ip_configurations" {
   type = list(object({
-    name       = string
-    properties = any
+    name                      = string
+    subnetResourceId          = optional(string)
+    publicIpAddressResourceId = optional(string)
+    privateIpAddress          = optional(string)
+    privateIpAllocationMethod = optional(string)
   }))
   default = []
 }
@@ -84,49 +78,76 @@ variable "frontend_ip_configurations" {
 variable "frontend_ports" {
   type = list(object({
     name = string
-    properties = object({
-      port = number
-    })
+    port = number
   }))
   default = []
 }
 
 variable "backend_address_pools" {
   type = list(object({
-    name       = string
-    properties = any
+    name = string
+    backendAddresses = optional(list(object({
+      fqdn      = optional(string)
+      ipAddress = optional(string)
+    })), [])
   }))
   default = []
 }
 
 variable "backend_http_settings_collection" {
   type = list(object({
-    name       = string
-    properties = any
+    name                           = string
+    cookieBasedAffinity            = optional(string)
+    path                           = optional(string)
+    port                           = number
+    protocol                       = string
+    requestTimeout                 = optional(number)
+    probeName                      = optional(string)
+    hostName                       = optional(string)
+    pickHostNameFromBackendAddress = optional(bool)
   }))
   default = []
 }
 
 variable "probes" {
   type = list(object({
-    name       = string
-    properties = any
+    name                                = string
+    protocol                            = string
+    path                                = string
+    interval                            = number
+    timeout                             = number
+    unhealthyThreshold                  = number
+    host                                = optional(string)
+    pickHostNameFromBackendHttpSettings = optional(bool)
+    minimumServers                      = optional(number)
   }))
   default = []
 }
 
 variable "http_listeners" {
   type = list(object({
-    name       = string
-    properties = any
+    name                        = string
+    frontendIpConfigurationName = string
+    frontendPortName            = string
+    protocol                    = string
+    hostName                    = optional(string)
+    hostNames                   = optional(list(string))
+    requireServerNameIndication = optional(bool)
+    sslCertificateName          = optional(string)
   }))
   default = []
 }
 
 variable "request_routing_rules" {
   type = list(object({
-    name       = string
-    properties = any
+    name                      = string
+    priority                  = optional(number)
+    ruleType                  = string
+    httpListenerName          = string
+    backendAddressPoolName    = optional(string)
+    backendHttpSettingsName   = optional(string)
+    redirectConfigurationName = optional(string)
+    urlPathMapName            = optional(string)
   }))
   default = []
 }
@@ -135,7 +156,6 @@ variable "managed_identities" {
   type = object({
     systemAssigned = bool
   })
-  default = null
 }
 
 variable "role_assignments" {
