@@ -33,6 +33,7 @@ locals {
       })
     }
   ]...)
+  front_door_identity_type = try(var.config.managedIdentities.systemAssigned, false) ? "SystemAssigned" : null
 }
 
 resource "azurerm_cdn_frontdoor_profile" "this" {
@@ -41,6 +42,13 @@ resource "azurerm_cdn_frontdoor_profile" "this" {
   sku_name                 = var.config.sku
   response_timeout_seconds = try(var.config.originResponseTimeoutSeconds, 120)
   tags                     = var.tags
+
+  dynamic "identity" {
+    for_each = local.front_door_identity_type == null ? [] : [local.front_door_identity_type]
+    content {
+      type = identity.value
+    }
+  }
 }
 
 resource "azurerm_cdn_frontdoor_endpoint" "this" {

@@ -19,11 +19,13 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "this" {
 
   dynamic "custom_rule" {
     for_each = try(var.config.enableDefaultWafMethodBlock, false) ? [{
-      name     = "BlockMethod"
-      action   = "Block"
-      enabled  = true
-      priority = 10
-      type     = "MatchRule"
+      name                       = "BlockMethod"
+      action                     = "Block"
+      enabled                    = true
+      priority                   = 10
+      type                       = "MatchRule"
+      rateLimitDurationInMinutes = 1
+      rateLimitThreshold         = 100
       conditions = [{
         match_variable     = "RequestMethod"
         operator           = "Equal"
@@ -33,11 +35,13 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "this" {
     }] : try(var.config.wafCustomRules.rules, [])
 
     content {
-      name     = custom_rule.value.name
-      action   = custom_rule.value.action
-      enabled  = try(custom_rule.value.enabledState, "Enabled") == "Enabled"
-      priority = custom_rule.value.priority
-      type     = try(custom_rule.value.ruleType, custom_rule.value.type)
+      name                           = custom_rule.value.name
+      action                         = custom_rule.value.action
+      enabled                        = try(custom_rule.value.enabledState, "Enabled") == "Enabled"
+      priority                       = custom_rule.value.priority
+      type                           = try(custom_rule.value.ruleType, custom_rule.value.type)
+      rate_limit_duration_in_minutes = try(custom_rule.value.rateLimitDurationInMinutes, null)
+      rate_limit_threshold           = try(custom_rule.value.rateLimitThreshold, null)
 
       dynamic "match_condition" {
         for_each = try(custom_rule.value.matchConditions, custom_rule.value.conditions, [])

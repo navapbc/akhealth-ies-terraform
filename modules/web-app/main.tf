@@ -83,6 +83,7 @@ resource "azurerm_windows_web_app" "this" {
     health_check_path                 = try(var.site_config.healthCheckPath, null)
     health_check_eviction_time_in_min = try(var.site_config.healthCheckPath, null) == null ? null : 2
     http2_enabled                     = try(var.site_config.http20Enabled, null)
+    local_mysql_enabled               = try(var.site_config.localMySqlEnabled, false)
     minimum_tls_version               = try(var.site_config.minTlsVersion, null)
     use_32_bit_worker                 = false
     vnet_route_all_enabled            = try(var.outbound_vnet_routing.allTraffic, null)
@@ -120,6 +121,7 @@ resource "azurerm_linux_web_app" "this" {
     health_check_path                 = try(var.site_config.healthCheckPath, null)
     health_check_eviction_time_in_min = try(var.site_config.healthCheckPath, null) == null ? null : 2
     http2_enabled                     = try(var.site_config.http20Enabled, null)
+    local_mysql_enabled               = try(var.site_config.localMySqlEnabled, false)
     minimum_tls_version               = try(var.site_config.minTlsVersion, null)
   }
 }
@@ -237,7 +239,7 @@ resource "azurerm_private_endpoint" "default" {
   }
 
   private_dns_zone_group {
-    name                 = local.name
+    name                 = "default"
     private_dns_zone_ids = [azurerm_private_dns_zone.default[0].id]
   }
 }

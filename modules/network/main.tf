@@ -35,9 +35,32 @@ locals {
   deploy_app_gateway                  = var.networking_option == "applicationGateway"
   create_private_endpoint_subnet      = var.deploy_private_networking
   create_postgresql_subnet            = var.deploy_postgresql_private_access
+  create_app_gateway_subnet           = local.deploy_app_gateway && try(var.application_gateway_config.subnetAddressSpace, "") != ""
   app_service_delegation              = var.deploy_ase_v3 ? "Microsoft.Web/hostingEnvironments" : "Microsoft.Web/serverFarms"
   app_service_subnet_nsg_id           = var.deploy_ase_v3 ? azurerm_network_security_group.ase[0].id : azurerm_network_security_group.appsvc[0].id
   app_service_private_endpoint_policy = var.deploy_ase_v3 ? "Disabled" : "Enabled"
+  nsg_diagnostic_settings = trimspace(var.log_analytics_workspace_id) == "" ? [] : [{
+    workspaceResourceId = var.log_analytics_workspace_id
+    logCategoriesAndGroups = [{
+      categoryGroup = "allLogs"
+    }]
+  }]
+  nsg_diagnostic_targets = merge(
+    var.deploy_ase_v3 ? {
+      (local.names.nsg_ase) = azurerm_network_security_group.ase[0].id
+      } : {
+      (local.names.nsg_appsvc) = azurerm_network_security_group.appsvc[0].id
+    },
+    local.create_private_endpoint_subnet ? {
+      (local.names.nsg_pe) = azurerm_network_security_group.private_endpoint[0].id
+    } : {},
+    local.create_postgresql_subnet ? {
+      (local.names.nsg_postgresql) = azurerm_network_security_group.postgresql[0].id
+    } : {},
+    local.create_app_gateway_subnet ? {
+      (local.names.nsg_appgw) = azurerm_network_security_group.app_gateway[0].id
+    } : {}
+  )
 }
 
 resource "azurerm_route_table" "egress" {
@@ -211,7 +234,8 @@ resource "azurerm_subnet" "app_service" {
     name = "app-service-delegation"
 
     service_delegation {
-      name = local.app_service_delegation
+      name    = local.app_service_delegation
+      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
     }
   }
 }
@@ -238,13 +262,14 @@ resource "azurerm_subnet" "postgresql" {
     name = "postgresql-flexible-server"
 
     service_delegation {
-      name = "Microsoft.DBforPostgreSQL/flexibleServers"
+      name    = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
     }
   }
 }
 
 resource "azurerm_subnet" "app_gateway" {
-  count = local.deploy_app_gateway && try(var.application_gateway_config.subnetAddressSpace, "") != "" ? 1 : 0
+  count = local.create_app_gateway_subnet ? 1 : 0
 
   name                 = local.names.snet_appgw
   resource_group_name  = var.resource_group_name
@@ -279,10 +304,22 @@ resource "azurerm_subnet_network_security_group_association" "postgresql" {
 }
 
 resource "azurerm_subnet_network_security_group_association" "app_gateway" {
-  count = local.deploy_app_gateway && try(var.application_gateway_config.subnetAddressSpace, "") != "" ? 1 : 0
+  count = local.create_app_gateway_subnet ? 1 : 0
 
   subnet_id                 = azurerm_subnet.app_gateway[0].id
   network_security_group_id = azurerm_network_security_group.app_gateway[0].id
+}
+
+module "nsg_diagnostic_settings" {
+  for_each = local.nsg_diagnostic_targets
+
+  source = "../common-diagnostic-settings"
+
+  name_prefix        = each.key
+  target_resource_id = each.value
+  diagnostic_settings = [for diagnostic_setting in local.nsg_diagnostic_settings : merge(diagnostic_setting, {
+    name = "${each.key}-diagnosticSettings"
+  })]
 }
 
 resource "azurerm_virtual_network_peering" "spoke_to_hub" {

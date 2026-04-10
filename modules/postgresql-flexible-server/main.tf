@@ -76,6 +76,12 @@ resource "azurerm_postgresql_flexible_server" "this" {
       standby_availability_zone = var.high_availability == "SameZone" ? tostring(var.availability_zone) : tostring(var.high_availability_zone)
     }
   }
+
+  lifecycle {
+    # When no explicit zone is requested, Azure may auto-assign one.
+    # Ignore that provider read-back so plans only show intentional zone changes.
+    ignore_changes = [zone]
+  }
 }
 
 resource "azurerm_postgresql_flexible_server_active_directory_administrator" "this" {
