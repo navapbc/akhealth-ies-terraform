@@ -36,10 +36,11 @@ locals {
   resolved_log_analytics_workspace_id   = local.existing_log_analytics_workspace_id != "" ? var.existing_log_analytics_id : module.log_analytics_workspace[0].resource_id
   resolved_app_service_plan_resource_id = local.use_existing_app_service_plan ? var.service_plan_config.existingPlanId : module.app_service_plan[0].resource_id
   postgresql_role_assignments = concat(var.postgresql_config.roleAssignments, var.postgresql_config.grantAppServiceIdentityReaderRole ? [{
-    roleDefinitionIdOrName = "Reader"
-    principalId            = module.web_app.system_assigned_mi_principal_id
-    principalType          = "ServicePrincipal"
-    description            = "Allows the web app system-assigned identity to read PostgreSQL flexible server resource metadata."
+    key                = "app-service-reader"
+    roleDefinitionName = "Reader"
+    principalId        = module.web_app.system_assigned_mi_principal_id
+    principalType      = "ServicePrincipal"
+    description        = "Allows the web app system-assigned identity to read PostgreSQL flexible server resource metadata."
   }] : [])
   spoke_private_dns_zone_links = [
     {

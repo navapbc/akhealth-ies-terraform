@@ -123,9 +123,9 @@ module "app_service_plan" {
   sku_name                            = var.service_plan_config.sku
   sku_capacity                        = var.service_plan_config.skuCapacity
   service_plan_kind                   = var.service_plan_config.kind
-  workload_kind                       = var.app_service_config.kind
   app_service_environment_resource_id = var.deploy_ase_v3 ? module.app_service_environment[0].resource_id : null
   per_site_scaling                    = var.service_plan_config.perSiteScaling
+  elastic_scale_enabled               = var.service_plan_config.elasticScaleEnabled
   maximum_elastic_worker_count        = var.service_plan_config.maximumElasticWorkerCount
   zone_redundant                      = var.service_plan_config.zoneRedundant
   diagnostic_settings                 = var.service_plan_config.diagnosticSettings

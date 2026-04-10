@@ -114,7 +114,9 @@ variable "spoke_network_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      roleDefinitionIdOrName             = string
+      key                                = optional(string)
+      roleDefinitionId                   = optional(string)
+      roleDefinitionName                 = optional(string)
       principalId                        = string
       principalType                      = optional(string)
       description                        = optional(string)
@@ -151,29 +153,19 @@ variable "service_plan_config" {
     zoneRedundant             = bool
     kind                      = string
     existingPlanId            = string
-    workerTierName            = string
     elasticScaleEnabled       = bool
     maximumElasticWorkerCount = number
     perSiteScaling            = bool
-    targetWorkerCount         = number
-    targetWorkerSize          = number
-    virtualNetworkSubnetId    = string
     isCustomMode              = bool
-    rdpEnabled                = bool
-    installScripts            = list(any)
-    planDefaultIdentity       = optional(string)
-    registryAdapters          = list(any)
-    storageMounts             = list(any)
-    managedIdentities = object({
-      systemAssigned = bool
-    })
     lock = optional(object({
       kind  = string
       name  = optional(string)
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      roleDefinitionIdOrName             = string
+      key                                = optional(string)
+      roleDefinitionId                   = optional(string)
+      roleDefinitionName                 = optional(string)
       principalId                        = string
       principalType                      = optional(string)
       description                        = optional(string)
@@ -201,6 +193,11 @@ variable "service_plan_config" {
     })), [])
   })
   description = "Azure native App Service Plan configuration object."
+
+  validation {
+    condition     = contains(["windows", "linux"], var.service_plan_config.kind)
+    error_message = "service_plan_config.kind must be either windows or linux."
+  }
 }
 
 variable "app_service_config" {
@@ -260,7 +257,9 @@ variable "app_service_config" {
       })), [])
     })), [])
     roleAssignments = optional(list(object({
-      roleDefinitionIdOrName             = string
+      key                                = optional(string)
+      roleDefinitionId                   = optional(string)
+      roleDefinitionName                 = optional(string)
       principalId                        = string
       principalType                      = optional(string)
       description                        = optional(string)
@@ -335,7 +334,9 @@ variable "key_vault_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      roleDefinitionIdOrName             = string
+      key                                = optional(string)
+      roleDefinitionId                   = optional(string)
+      roleDefinitionName                 = optional(string)
       principalId                        = string
       principalType                      = optional(string)
       description                        = optional(string)
@@ -381,7 +382,9 @@ variable "app_insights_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      roleDefinitionIdOrName             = string
+      key                                = optional(string)
+      roleDefinitionId                   = optional(string)
+      roleDefinitionName                 = optional(string)
       principalId                        = string
       principalType                      = optional(string)
       description                        = optional(string)
@@ -527,7 +530,9 @@ variable "app_gateway_config" {
     }))
     routingRules = list(object({ name = string, properties = any }))
     roleAssignments = optional(list(object({
-      roleDefinitionIdOrName             = string
+      key                                = optional(string)
+      roleDefinitionId                   = optional(string)
+      roleDefinitionName                 = optional(string)
       principalId                        = string
       principalType                      = optional(string)
       description                        = optional(string)
@@ -613,7 +618,9 @@ variable "front_door_config" {
     ruleSets      = list(any)
     secrets       = list(any)
     roleAssignments = optional(list(object({
-      roleDefinitionIdOrName             = string
+      key                                = optional(string)
+      roleDefinitionId                   = optional(string)
+      roleDefinitionName                 = optional(string)
       principalId                        = string
       principalType                      = optional(string)
       description                        = optional(string)
@@ -730,7 +737,9 @@ variable "ase_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      roleDefinitionIdOrName             = string
+      key                                = optional(string)
+      roleDefinitionId                   = optional(string)
+      roleDefinitionName                 = optional(string)
       principalId                        = string
       principalType                      = optional(string)
       description                        = optional(string)
@@ -800,7 +809,9 @@ variable "postgresql_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      roleDefinitionIdOrName             = string
+      key                                = optional(string)
+      roleDefinitionId                   = optional(string)
+      roleDefinitionName                 = optional(string)
       principalId                        = string
       principalType                      = optional(string)
       description                        = optional(string)
@@ -844,7 +855,9 @@ variable "log_analytics_config" {
       notes = optional(string)
     }))
     roleAssignments = optional(list(object({
-      roleDefinitionIdOrName             = string
+      key                                = optional(string)
+      roleDefinitionId                   = optional(string)
+      roleDefinitionName                 = optional(string)
       principalId                        = string
       principalType                      = optional(string)
       description                        = optional(string)

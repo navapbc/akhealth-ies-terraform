@@ -33,10 +33,11 @@ variable "sku_capacity" {
 
 variable "service_plan_kind" {
   type = string
-}
 
-variable "workload_kind" {
-  type = string
+  validation {
+    condition     = contains(["windows", "linux"], var.service_plan_kind)
+    error_message = "service_plan_kind must be either windows or linux."
+  }
 }
 
 variable "app_service_environment_resource_id" {
@@ -50,6 +51,10 @@ variable "per_site_scaling" {
 
 variable "maximum_elastic_worker_count" {
   type = number
+}
+
+variable "elastic_scale_enabled" {
+  type = bool
 }
 
 variable "zone_redundant" {
@@ -67,7 +72,9 @@ variable "lock" {
 
 variable "role_assignments" {
   type = list(object({
-    roleDefinitionIdOrName             = string
+    key                                = optional(string)
+    roleDefinitionId                   = optional(string)
+    roleDefinitionName                 = optional(string)
     principalId                        = string
     principalType                      = optional(string)
     description                        = optional(string)

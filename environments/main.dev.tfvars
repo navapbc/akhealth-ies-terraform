@@ -42,21 +42,10 @@ service_plan_config = {
   zoneRedundant             = false
   kind                      = "windows"
   existingPlanId            = ""
-  workerTierName            = ""
   elasticScaleEnabled       = false
   maximumElasticWorkerCount = 1
   perSiteScaling            = false
-  targetWorkerCount         = 1
-  targetWorkerSize          = 0
-  virtualNetworkSubnetId    = ""
   isCustomMode              = false
-  rdpEnabled                = false
-  installScripts            = []
-  registryAdapters          = []
-  storageMounts             = []
-  managedIdentities = {
-    systemAssigned = false
-  }
   roleAssignments    = []
   diagnosticSettings = []
 }

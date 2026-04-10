@@ -154,7 +154,9 @@ variable "disable_bgp_route_propagation" {
 
 variable "vnet_role_assignments" {
   type = list(object({
-    roleDefinitionIdOrName             = string
+    key                                = optional(string)
+    roleDefinitionId                   = optional(string)
+    roleDefinitionName                 = optional(string)
     principalId                        = string
     principalType                      = optional(string)
     description                        = optional(string)

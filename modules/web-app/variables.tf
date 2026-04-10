@@ -140,7 +140,9 @@ variable "default_private_dns_zone_virtual_network_links" {
 
 variable "role_assignments" {
   type = list(object({
-    roleDefinitionIdOrName             = string
+    key                                = optional(string)
+    roleDefinitionId                   = optional(string)
+    roleDefinitionName                 = optional(string)
     principalId                        = string
     principalType                      = optional(string)
     description                        = optional(string)

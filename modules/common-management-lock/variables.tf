@@ -13,4 +13,12 @@ variable "lock" {
     notes = optional(string)
   })
   default = null
+
+  validation {
+    condition = var.lock == null || contains([
+      "CanNotDelete",
+      "ReadOnly",
+    ], var.lock.kind)
+    error_message = "lock.kind must be CanNotDelete or ReadOnly when a lock is provided."
+  }
 }

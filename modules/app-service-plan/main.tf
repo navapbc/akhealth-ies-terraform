@@ -15,21 +15,22 @@ locals {
   region_abbreviation = lookup(local.region_abbreviations, var.location, replace(var.location, " ", ""))
   workload_segment    = trimspace(var.workload_description) == "" ? "" : "-${var.workload_description}"
   name                = substr("asp-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 40)
-  os_type             = lower(var.service_plan_kind) == "linux" ? "Linux" : "Windows"
+  os_type             = var.service_plan_kind == "linux" ? "Linux" : "Windows"
 }
 
 resource "azurerm_service_plan" "this" {
-  name                         = local.name
-  location                     = var.location
-  resource_group_name          = var.resource_group_name
-  os_type                      = local.os_type
-  sku_name                     = var.sku_name
-  worker_count                 = var.sku_capacity
-  app_service_environment_id   = var.app_service_environment_resource_id
-  per_site_scaling_enabled     = var.per_site_scaling
-  maximum_elastic_worker_count = var.maximum_elastic_worker_count
-  zone_balancing_enabled       = var.zone_redundant
-  tags                         = var.tags
+  name                            = local.name
+  location                        = var.location
+  resource_group_name             = var.resource_group_name
+  os_type                         = local.os_type
+  sku_name                        = var.sku_name
+  worker_count                    = var.sku_capacity
+  app_service_environment_id      = var.app_service_environment_resource_id
+  per_site_scaling_enabled        = var.per_site_scaling
+  premium_plan_auto_scale_enabled = var.elastic_scale_enabled
+  maximum_elastic_worker_count    = var.maximum_elastic_worker_count
+  zone_balancing_enabled          = var.zone_redundant
+  tags                            = var.tags
 }
 
 module "role_assignments" {

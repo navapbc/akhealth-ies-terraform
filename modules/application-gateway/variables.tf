@@ -160,7 +160,9 @@ variable "managed_identities" {
 
 variable "role_assignments" {
   type = list(object({
-    roleDefinitionIdOrName             = string
+    key                                = optional(string)
+    roleDefinitionId                   = optional(string)
+    roleDefinitionName                 = optional(string)
     principalId                        = string
     principalType                      = optional(string)
     description                        = optional(string)
