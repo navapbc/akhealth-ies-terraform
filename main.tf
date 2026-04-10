@@ -173,26 +173,77 @@ module "front_door_waf_policy" {
   count  = local.use_front_door_ingress ? 1 : 0
   source = "./modules/front-door-waf-policy"
 
-  resource_group_name      = azurerm_resource_group.spoke.name
-  system_abbreviation      = var.system_abbreviation
-  environment_abbreviation = var.environment_abbreviation
-  instance_number          = var.instance_number
-  workload_description     = var.workload_description
-  config                   = var.front_door_config
-  tags                     = var.tags
+  resource_group_name             = azurerm_resource_group.spoke.name
+  system_abbreviation             = var.system_abbreviation
+  environment_abbreviation        = var.environment_abbreviation
+  instance_number                 = var.instance_number
+  workload_description            = trimspace(var.workload_description) == "" ? null : var.workload_description
+  sku                             = var.front_door_config.sku
+  enable_default_waf_method_block = var.front_door_config.enableDefaultWafMethodBlock
+  waf_custom_rules = [
+    for rule in var.front_door_config.wafCustomRules.rules : {
+      name                       = rule.name
+      action                     = rule.action
+      enabledState               = rule.enabledState
+      priority                   = rule.priority
+      type                       = coalesce(rule.ruleType, rule.type)
+      rateLimitDurationInMinutes = rule.rateLimitDurationInMinutes
+      rateLimitThreshold         = rule.rateLimitThreshold
+      matchConditions = [
+        for condition in rule.matchConditions : {
+          matchVariable   = coalesce(condition.matchVariable, condition.match_variable)
+          operator        = condition.operator
+          negateCondition = coalesce(condition.negateCondition, condition.negation_condition)
+          matchValue      = coalesce(condition.matchValue, condition.match_values, [])
+          selector        = condition.selector
+          transforms      = condition.transforms
+        }
+      ]
+    }
+  ]
+  waf_policy_settings   = var.front_door_config.wafPolicySettings
+  waf_managed_rule_sets = var.front_door_config.wafManagedRuleSets
+  lock                  = var.front_door_config.lock
+  tags                  = var.tags
 }
 
 module "front_door" {
   count  = local.use_front_door_ingress ? 1 : 0
   source = "./modules/front-door"
 
-  resource_group_name         = azurerm_resource_group.spoke.name
-  system_abbreviation         = var.system_abbreviation
-  environment_abbreviation    = var.environment_abbreviation
-  instance_number             = var.instance_number
-  workload_description        = var.workload_description
-  location                    = "global"
-  config                      = var.front_door_config
+  resource_group_name             = azurerm_resource_group.spoke.name
+  system_abbreviation             = var.system_abbreviation
+  environment_abbreviation        = var.environment_abbreviation
+  instance_number                 = var.instance_number
+  workload_description            = var.workload_description
+  location                        = "global"
+  sku                             = var.front_door_config.sku
+  managed_identities              = var.front_door_config.managedIdentities
+  origin_response_timeout_seconds = var.front_door_config.originResponseTimeoutSeconds
+  origin_groups                   = var.front_door_config.originGroups
+  afd_endpoints = [
+    for endpoint in var.front_door_config.afdEndpoints : {
+      name         = endpoint.name
+      enabledState = endpoint.enabledState
+      tags         = try(endpoint.tags, null)
+      routes = [
+        for route in endpoint.routes : {
+          name                = route.name
+          enabledState        = route.enabledState
+          forwardingProtocol  = route.forwardingProtocol
+          httpsRedirect       = route.httpsRedirect
+          linkToDefaultDomain = route.linkToDefaultDomain
+          originGroupName     = route.originGroupName
+          originPath          = try(route.originPath, null)
+          patternsToMatch     = route.patternsToMatch
+          supportedProtocols  = route.supportedProtocols
+        }
+      ]
+    }
+  ]
+  role_assignments            = var.front_door_config.roleAssignments
+  diagnostic_settings         = var.front_door_config.diagnosticSettings
+  lock                        = var.front_door_config.lock
   workload_origin_host_name   = module.web_app.default_hostname
   workload_origin_resource_id = module.web_app.resource_id
   workload_origin_location    = module.web_app.location
@@ -206,7 +257,7 @@ module "front_door_security_policy" {
   system_abbreviation        = var.system_abbreviation
   environment_abbreviation   = var.environment_abbreviation
   instance_number            = var.instance_number
-  workload_description       = var.workload_description
+  workload_description       = trimspace(var.workload_description) == "" ? null : var.workload_description
   location                   = var.location
   profile_resource_id        = module.front_door[0].resource_id
   waf_policy_resource_id     = module.front_door_waf_policy[0].resource_id

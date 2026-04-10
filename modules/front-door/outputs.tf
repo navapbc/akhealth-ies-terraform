@@ -13,7 +13,3 @@ output "front_door_endpoint_host_names" {
 output "afd_endpoint_resource_ids" {
   value = values(azurerm_cdn_frontdoor_endpoint.this)[*].id
 }
-
-output "custom_domain_resource_ids" {
-  value = []
-}
