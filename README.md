@@ -81,6 +81,14 @@ Provider-shape differences that are semantically equivalent should generally be 
 
 Terraform also handles optional naming inputs a little differently than Bicep. In Bicep, a nullable or omitted `workloadDescription` can be modeled directly in `.bicepparam`. In Terraform, `.tfvars` files declare values but do not normalize them, so this repo treats `workload_description = null` as the intended omission signal and normalizes it once in the root module before passing it downstream. New `.tfvars` files should use `null`, not `""`, when the workload segment should be omitted from resource names.
 
+Terraform refactors also have a state-address concern that does not usually feel as visible in Bicep. If a Terraform refactor changes a resource or module address without changing the real Azure resource, Terraform may need an explicit `moved` block or a `terraform state mv` operation so state follows the new address cleanly. In Bicep, refactors usually stay focused on the deployed ARM resource shape; in Terraform, internal address changes can matter even when the underlying Azure resource is semantically unchanged. When that happens in this repo, prefer `moved` blocks for reviewable, non-destructive migrations during the refactor, and remove them later once the state has been migrated everywhere that matters.
+
+## Operational Differences From Bicep
+
+- A clean `terraform plan` means Azure matches Terraform state and configuration. It does not, by itself, prove that Terraform still matches the original Bicep desired state. When parity matters, use both `terraform plan` and Bicep `what-if`.
+- Strongly typed root and module contracts matter more than they may first appear to in Terraform. Loose `any` objects and `try(...)`-heavy patterns can hide intended state quickly and push mistakes later into plan/apply time.
+- Terraform offers stronger state and lifecycle tooling than Bicep for imports, drift management, and controlled refactors, but that extra control comes with extra operational complexity.
+
 resourceAbbreviation-systemAbbreviation-regionAbbreviation-environmentAbbreviation-workloadDescription-subWorkloadDescription-instanceNumber
 
 ## Resource Group Names Examples
