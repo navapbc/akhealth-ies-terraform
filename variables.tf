@@ -7,6 +7,21 @@ variable "workload_name" {
 variable "location" {
   type        = string
   description = "Azure region for the deployment."
+
+  validation {
+    condition = contains([
+      "eastus",
+      "eastus2",
+      "westus",
+      "westus2",
+      "westus3",
+      "centralus",
+      "northcentralus",
+      "southcentralus",
+      "westcentralus",
+    ], var.location)
+    error_message = "location must be one of the repo-supported Azure regions."
+  }
 }
 
 variable "environment_name" {
@@ -31,8 +46,13 @@ variable "instance_number" {
 
 variable "workload_description" {
   type        = string
-  description = "Optional workload descriptor that participates in naming."
-  default     = ""
+  description = "Optional workload descriptor that participates in naming. Use null to omit it."
+  default     = null
+
+  validation {
+    condition     = var.workload_description == null || trimspace(var.workload_description) != ""
+    error_message = "workload_description must be null or a non-empty string."
+  }
 }
 
 variable "deploy_ase_v3" {
@@ -615,43 +635,27 @@ variable "app_gateway_config" {
 
 variable "front_door_config" {
   type = object({
-    afdPeAutoApproverIsolationScope = string
     managedIdentities = object({
       systemAssigned = bool
     })
     enableDefaultWafMethodBlock = bool
-    wafCustomRules = object({
-      rules = optional(list(object({
-        name                       = string
-        action                     = string
-        enabledState               = optional(string)
-        priority                   = number
-        ruleType                   = optional(string)
-        type                       = optional(string)
-        rateLimitDurationInMinutes = optional(number)
-        rateLimitThreshold         = optional(number)
-        matchConditions = optional(list(object({
-          matchVariable      = optional(string)
-          match_variable     = optional(string)
-          operator           = string
-          negateCondition    = optional(bool)
-          negation_condition = optional(bool)
-          matchValue         = optional(list(string))
-          match_values       = optional(list(string))
-          selector           = optional(string)
-          transforms         = optional(list(string))
-        })), [])
-        conditions = optional(list(object({
-          match_variable     = string
-          operator           = string
-          negation_condition = optional(bool)
-          match_values       = optional(list(string))
-        })), [])
+    wafCustomRules = optional(list(object({
+      name                       = string
+      action                     = string
+      enabledState               = optional(string)
+      priority                   = number
+      type                       = string
+      rateLimitDurationInMinutes = optional(number)
+      rateLimitThreshold         = optional(number)
+      matchConditions = optional(list(object({
+        matchVariable   = string
+        operator        = string
+        negateCondition = optional(bool)
+        matchValue      = optional(list(string), [])
+        selector        = optional(string)
+        transforms      = optional(list(string))
       })), [])
-    })
-    customDomains = list(any)
-    ruleSets      = list(any)
-    secrets       = list(any)
+    })), [])
     roleAssignments = optional(list(object({
       key                                = optional(string)
       roleDefinitionId                   = optional(string)
@@ -665,27 +669,24 @@ variable "front_door_config" {
       name                               = optional(string)
     })), [])
     originResponseTimeoutSeconds = number
-    autoApprovePrivateEndpoint   = bool
     sku                          = string
     wafPolicySettings = object({
       enabledState     = string
       mode             = string
       requestBodyCheck = string
     })
-    wafManagedRuleSets = list(object({
-      ruleSetType        = string
-      ruleSetVersion     = string
-      ruleSetAction      = optional(string)
-      ruleGroupOverrides = optional(list(any), [])
-    }))
+    wafManagedRuleSets = optional(list(object({
+      ruleSetType    = string
+      ruleSetVersion = string
+      ruleSetAction  = optional(string)
+    })), [])
     originGroups = list(object({
-      name           = string
-      authentication = optional(any)
+      name = string
       healthProbeSettings = optional(object({
-        probePath              = optional(string)
-        probeIntervalInSeconds = optional(number)
-        probeRequestType       = optional(string)
-        probeProtocol          = optional(string)
+        probePath              = string
+        probeIntervalInSeconds = number
+        probeRequestType       = string
+        probeProtocol          = string
       }))
       loadBalancingSettings = object({
         sampleSize                      = number
@@ -709,11 +710,11 @@ variable "front_door_config" {
       }))
     }))
     afdEndpoints = list(object({
-      name = string
+      name         = string
+      enabledState = string
+      tags         = optional(map(string))
       routes = list(object({
         name                = string
-        cacheConfiguration  = optional(any)
-        customDomainNames   = optional(list(string))
         enabledState        = string
         forwardingProtocol  = string
         httpsRedirect       = string
@@ -721,12 +722,8 @@ variable "front_door_config" {
         originGroupName     = string
         originPath          = optional(string)
         patternsToMatch     = list(string)
-        ruleSets            = optional(list(string))
         supportedProtocols  = list(string)
       }))
-      tags                              = optional(map(string))
-      autoGeneratedDomainNameLabelScope = string
-      enabledState                      = string
     }))
     securityPatternsToMatch = optional(list(string), ["/*"])
     lock = optional(object({
@@ -875,27 +872,27 @@ variable "postgresql_config" {
   description = "Azure native PostgreSQL Flexible Server configuration object."
 
   validation {
-    condition = contains(["delegatedSubnet", "none"], var.postgresql_config.privateAccessMode)
+    condition     = contains(["delegatedSubnet", "none"], var.postgresql_config.privateAccessMode)
     error_message = "postgresql_config.privateAccessMode must be delegatedSubnet or none."
   }
 
   validation {
-    condition = contains(["Disabled", "SameZone", "ZoneRedundant"], var.postgresql_config.highAvailability)
+    condition     = contains(["Disabled", "SameZone", "ZoneRedundant"], var.postgresql_config.highAvailability)
     error_message = "postgresql_config.highAvailability must be Disabled, SameZone, or ZoneRedundant."
   }
 
   validation {
-    condition = contains(["Enabled", "Disabled"], var.postgresql_config.geoRedundantBackup)
+    condition     = contains(["Enabled", "Disabled"], var.postgresql_config.geoRedundantBackup)
     error_message = "postgresql_config.geoRedundantBackup must be Enabled or Disabled."
   }
 
   validation {
-    condition = contains(["Enabled", "Disabled"], var.postgresql_config.autoGrow)
+    condition     = contains(["Enabled", "Disabled"], var.postgresql_config.autoGrow)
     error_message = "postgresql_config.autoGrow must be Enabled or Disabled."
   }
 
   validation {
-    condition = contains(["Enabled", "Disabled"], var.postgresql_config.publicNetworkAccess)
+    condition     = contains(["Enabled", "Disabled"], var.postgresql_config.publicNetworkAccess)
     error_message = "postgresql_config.publicNetworkAccess must be Enabled or Disabled."
   }
 

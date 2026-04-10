@@ -196,34 +196,34 @@ resource "azurerm_linux_function_app" "this" {
 locals {
   app_id = local.is_function_app ? (
     local.is_linux ? azurerm_linux_function_app.this[0].id : azurerm_windows_function_app.this[0].id
-  ) : (
+    ) : (
     local.is_linux ? azurerm_linux_web_app.this[0].id : azurerm_windows_web_app.this[0].id
   )
   app_name = local.is_function_app ? (
     local.is_linux ? azurerm_linux_function_app.this[0].name : azurerm_windows_function_app.this[0].name
-  ) : (
+    ) : (
     local.is_linux ? azurerm_linux_web_app.this[0].name : azurerm_windows_web_app.this[0].name
   )
   default_hostname = local.is_function_app ? (
     local.is_linux ? azurerm_linux_function_app.this[0].default_hostname : azurerm_windows_function_app.this[0].default_hostname
-  ) : (
+    ) : (
     local.is_linux ? azurerm_linux_web_app.this[0].default_hostname : azurerm_windows_web_app.this[0].default_hostname
   )
   principal_id = !local.identity_enabled ? null : (
     local.is_function_app ? (
       local.is_linux ? azurerm_linux_function_app.this[0].identity[0].principal_id : azurerm_windows_function_app.this[0].identity[0].principal_id
-    ) : (
+      ) : (
       local.is_linux ? azurerm_linux_web_app.this[0].identity[0].principal_id : azurerm_windows_web_app.this[0].identity[0].principal_id
     )
   )
   app_resource_group_name = local.is_function_app ? (
     local.is_linux ? azurerm_linux_function_app.this[0].resource_group_name : azurerm_windows_function_app.this[0].resource_group_name
-  ) : (
+    ) : (
     local.is_linux ? azurerm_linux_web_app.this[0].resource_group_name : azurerm_windows_web_app.this[0].resource_group_name
   )
   app_location = local.is_function_app ? (
     local.is_linux ? azurerm_linux_function_app.this[0].location : azurerm_windows_function_app.this[0].location
-  ) : (
+    ) : (
     local.is_linux ? azurerm_linux_web_app.this[0].location : azurerm_windows_web_app.this[0].location
   )
 }

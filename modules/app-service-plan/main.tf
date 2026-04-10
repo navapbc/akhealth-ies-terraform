@@ -13,7 +13,7 @@ locals {
   }
 
   region_abbreviation = lookup(local.region_abbreviations, var.location, replace(var.location, " ", ""))
-  workload_segment    = trimspace(var.workload_description) == "" ? "" : "-${var.workload_description}"
+  workload_segment    = var.workload_description == null ? "" : "-${var.workload_description}"
   name                = substr("asp-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 40)
   os_type             = var.service_plan_kind == "linux" ? "Linux" : "Windows"
 }

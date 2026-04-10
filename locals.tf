@@ -14,8 +14,11 @@ locals {
     global         = "global"
   }
 
-  region_abbreviation = lookup(local.region_abbreviations, var.location, replace(var.location, " ", ""))
-  workload_segment    = trimspace(var.workload_description) == "" ? "" : "-${var.workload_description}"
+  normalized_workload_description = var.workload_description == null ? null : (
+    trimspace(var.workload_description) == "" ? null : trimspace(var.workload_description)
+  )
+  region_abbreviation = local.region_abbreviations[var.location]
+  workload_segment    = local.normalized_workload_description == null ? "" : "-${local.normalized_workload_description}"
 
   resource_group_name = substr(
     "rg-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}",
@@ -56,5 +59,5 @@ locals {
       registrationEnabled      = false
     }
   ]
-  postgresql_private_dns_zone_links = concat(local.spoke_private_dns_zone_links, local.optional_hub_private_dns_zone_link)
+  private_dns_zone_virtual_network_links = concat(local.spoke_private_dns_zone_links, local.optional_hub_private_dns_zone_link)
 }

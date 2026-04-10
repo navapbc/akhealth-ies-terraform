@@ -79,6 +79,8 @@ The Front Door private endpoint auto-approval gap also means the supporting user
 
 Provider-shape differences that are semantically equivalent should generally be treated as documentation items rather than conversion bugs. In practice that means a different role assignment GUID or ARM-generated resource name is acceptable when the principal, role, and scope are otherwise the same.
 
+Terraform also handles optional naming inputs a little differently than Bicep. In Bicep, a nullable or omitted `workloadDescription` can be modeled directly in `.bicepparam`. In Terraform, `.tfvars` files declare values but do not normalize them, so this repo treats `workload_description = null` as the intended omission signal and normalizes it once in the root module before passing it downstream. New `.tfvars` files should use `null`, not `""`, when the workload segment should be omitted from resource names.
+
 resourceAbbreviation-systemAbbreviation-regionAbbreviation-environmentAbbreviation-workloadDescription-subWorkloadDescription-instanceNumber
 
 ## Resource Group Names Examples

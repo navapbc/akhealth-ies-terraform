@@ -12,7 +12,7 @@ module "log_analytics_workspace" {
   system_abbreviation                               = var.system_abbreviation
   environment_abbreviation                          = var.environment_abbreviation
   instance_number                                   = var.instance_number
-  workload_description                              = trimspace(var.workload_description) == "" ? null : var.workload_description
+  workload_description                              = local.normalized_workload_description
   location                                          = var.location
   tags                                              = var.tags
   sku                                               = var.log_analytics_config.sku
@@ -33,7 +33,7 @@ module "network" {
   system_abbreviation                         = var.system_abbreviation
   environment_abbreviation                    = var.environment_abbreviation
   instance_number                             = var.instance_number
-  workload_description                        = trimspace(var.workload_description) == "" ? null : var.workload_description
+  workload_description                        = local.normalized_workload_description
   location                                    = var.location
   deploy_ase_v3                               = var.deploy_ase_v3
   deploy_private_networking                   = local.private_networking_enabled
@@ -52,20 +52,20 @@ module "network" {
       diagnostic_setting.workspaceResourceId == null ? { workspaceResourceId = local.resolved_log_analytics_workspace_id } : {}
     )
   ]
-  hub_peering_config                          = var.spoke_network_config.hubPeeringConfig
-  dns_servers                                 = var.spoke_network_config.dnsServers
-  ddos_protection_plan_resource_id            = var.spoke_network_config.ddosProtectionPlanResourceId
-  vnet_diagnostic_settings                    = var.spoke_network_config.diagnosticSettings
-  vnet_lock                                   = var.spoke_network_config.lock
-  disable_bgp_route_propagation               = var.spoke_network_config.disableBgpRoutePropagation
-  vnet_role_assignments                       = var.spoke_network_config.roleAssignments
-  vnet_encryption                             = var.spoke_network_config.encryption
-  vnet_encryption_enforcement                 = var.spoke_network_config.encryptionEnforcement
-  flow_timeout_in_minutes                     = var.spoke_network_config.flowTimeoutInMinutes
-  enable_vm_protection                        = var.spoke_network_config.enableVmProtection
-  enable_private_endpoint_vnet_policies       = var.spoke_network_config.enablePrivateEndpointVNetPolicies
-  virtual_network_bgp_community               = var.spoke_network_config.bgpCommunity
-  tags                                        = var.tags
+  hub_peering_config                    = var.spoke_network_config.hubPeeringConfig
+  dns_servers                           = var.spoke_network_config.dnsServers
+  ddos_protection_plan_resource_id      = var.spoke_network_config.ddosProtectionPlanResourceId
+  vnet_diagnostic_settings              = var.spoke_network_config.diagnosticSettings
+  vnet_lock                             = var.spoke_network_config.lock
+  disable_bgp_route_propagation         = var.spoke_network_config.disableBgpRoutePropagation
+  vnet_role_assignments                 = var.spoke_network_config.roleAssignments
+  vnet_encryption                       = var.spoke_network_config.encryption
+  vnet_encryption_enforcement           = var.spoke_network_config.encryptionEnforcement
+  flow_timeout_in_minutes               = var.spoke_network_config.flowTimeoutInMinutes
+  enable_vm_protection                  = var.spoke_network_config.enableVmProtection
+  enable_private_endpoint_vnet_policies = var.spoke_network_config.enablePrivateEndpointVNetPolicies
+  virtual_network_bgp_community         = var.spoke_network_config.bgpCommunity
+  tags                                  = var.tags
 }
 
 module "app_service_environment" {
@@ -76,7 +76,7 @@ module "app_service_environment" {
   system_abbreviation                    = var.system_abbreviation
   environment_abbreviation               = var.environment_abbreviation
   instance_number                        = var.instance_number
-  workload_description                   = var.workload_description
+  workload_description                   = local.normalized_workload_description
   location                               = var.location
   subnet_resource_id                     = module.network.snet_appsvc_resource_id
   cluster_settings                       = var.ase_config.clusterSettings
@@ -98,7 +98,7 @@ module "app_insights" {
   system_abbreviation                 = var.system_abbreviation
   environment_abbreviation            = var.environment_abbreviation
   instance_number                     = var.instance_number
-  workload_description                = trimspace(var.workload_description) == "" ? null : var.workload_description
+  workload_description                = local.normalized_workload_description
   location                            = var.location
   workspace_resource_id               = local.resolved_log_analytics_workspace_id
   application_type                    = var.app_insights_config.applicationType
@@ -123,7 +123,7 @@ module "app_service_plan" {
   system_abbreviation                 = var.system_abbreviation
   environment_abbreviation            = var.environment_abbreviation
   instance_number                     = var.instance_number
-  workload_description                = var.workload_description
+  workload_description                = local.normalized_workload_description
   location                            = var.location
   sku_name                            = var.service_plan_config.sku
   sku_capacity                        = var.service_plan_config.skuCapacity
@@ -146,7 +146,7 @@ module "web_app" {
   system_abbreviation                             = var.system_abbreviation
   environment_abbreviation                        = var.environment_abbreviation
   instance_number                                 = var.instance_number
-  workload_description                            = trimspace(var.workload_description) == "" ? null : var.workload_description
+  workload_description                            = local.normalized_workload_description
   location                                        = var.location
   kind                                            = var.app_service_config.kind
   service_plan_kind                               = var.service_plan_config.kind
@@ -183,34 +183,14 @@ module "front_door_waf_policy" {
   system_abbreviation             = var.system_abbreviation
   environment_abbreviation        = var.environment_abbreviation
   instance_number                 = var.instance_number
-  workload_description            = trimspace(var.workload_description) == "" ? null : var.workload_description
+  workload_description            = local.normalized_workload_description
   sku                             = var.front_door_config.sku
   enable_default_waf_method_block = var.front_door_config.enableDefaultWafMethodBlock
-  waf_custom_rules = [
-    for rule in var.front_door_config.wafCustomRules.rules : {
-      name                       = rule.name
-      action                     = rule.action
-      enabledState               = rule.enabledState
-      priority                   = rule.priority
-      type                       = coalesce(rule.ruleType, rule.type)
-      rateLimitDurationInMinutes = rule.rateLimitDurationInMinutes
-      rateLimitThreshold         = rule.rateLimitThreshold
-      matchConditions = [
-        for condition in rule.matchConditions : {
-          matchVariable   = coalesce(condition.matchVariable, condition.match_variable)
-          operator        = condition.operator
-          negateCondition = coalesce(condition.negateCondition, condition.negation_condition)
-          matchValue      = coalesce(condition.matchValue, condition.match_values, [])
-          selector        = condition.selector
-          transforms      = condition.transforms
-        }
-      ]
-    }
-  ]
-  waf_policy_settings   = var.front_door_config.wafPolicySettings
-  waf_managed_rule_sets = var.front_door_config.wafManagedRuleSets
-  lock                  = var.front_door_config.lock
-  tags                  = var.tags
+  waf_custom_rules                = var.front_door_config.wafCustomRules
+  waf_policy_settings             = var.front_door_config.wafPolicySettings
+  waf_managed_rule_sets           = var.front_door_config.wafManagedRuleSets
+  lock                            = var.front_door_config.lock
+  tags                            = var.tags
 }
 
 module "front_door" {
@@ -221,39 +201,20 @@ module "front_door" {
   system_abbreviation             = var.system_abbreviation
   environment_abbreviation        = var.environment_abbreviation
   instance_number                 = var.instance_number
-  workload_description            = var.workload_description
+  workload_description            = local.normalized_workload_description
   location                        = "global"
   sku                             = var.front_door_config.sku
   managed_identities              = var.front_door_config.managedIdentities
   origin_response_timeout_seconds = var.front_door_config.originResponseTimeoutSeconds
   origin_groups                   = var.front_door_config.originGroups
-  afd_endpoints = [
-    for endpoint in var.front_door_config.afdEndpoints : {
-      name         = endpoint.name
-      enabledState = endpoint.enabledState
-      tags         = try(endpoint.tags, null)
-      routes = [
-        for route in endpoint.routes : {
-          name                = route.name
-          enabledState        = route.enabledState
-          forwardingProtocol  = route.forwardingProtocol
-          httpsRedirect       = route.httpsRedirect
-          linkToDefaultDomain = route.linkToDefaultDomain
-          originGroupName     = route.originGroupName
-          originPath          = try(route.originPath, null)
-          patternsToMatch     = route.patternsToMatch
-          supportedProtocols  = route.supportedProtocols
-        }
-      ]
-    }
-  ]
-  role_assignments            = var.front_door_config.roleAssignments
-  diagnostic_settings         = var.front_door_config.diagnosticSettings
-  lock                        = var.front_door_config.lock
-  workload_origin_host_name   = module.web_app.default_hostname
-  workload_origin_resource_id = module.web_app.resource_id
-  workload_origin_location    = module.web_app.location
-  tags                        = var.tags
+  afd_endpoints                   = var.front_door_config.afdEndpoints
+  role_assignments                = var.front_door_config.roleAssignments
+  diagnostic_settings             = var.front_door_config.diagnosticSettings
+  lock                            = var.front_door_config.lock
+  workload_origin_host_name       = module.web_app.default_hostname
+  workload_origin_resource_id     = module.web_app.resource_id
+  workload_origin_location        = module.web_app.location
+  tags                            = var.tags
 }
 
 module "front_door_security_policy" {
@@ -263,7 +224,7 @@ module "front_door_security_policy" {
   system_abbreviation        = var.system_abbreviation
   environment_abbreviation   = var.environment_abbreviation
   instance_number            = var.instance_number
-  workload_description       = trimspace(var.workload_description) == "" ? null : var.workload_description
+  workload_description       = local.normalized_workload_description
   location                   = var.location
   profile_resource_id        = module.front_door[0].resource_id
   waf_policy_resource_id     = module.front_door_waf_policy[0].resource_id
@@ -279,7 +240,7 @@ module "application_gateway" {
   system_abbreviation              = var.system_abbreviation
   environment_abbreviation         = var.environment_abbreviation
   instance_number                  = var.instance_number
-  workload_description             = var.workload_description
+  workload_description             = local.normalized_workload_description
   location                         = var.location
   sku                              = var.app_gateway_config.sku
   capacity                         = var.app_gateway_config.capacity
@@ -311,7 +272,7 @@ module "key_vault" {
   system_abbreviation                            = var.system_abbreviation
   environment_abbreviation                       = var.environment_abbreviation
   instance_number                                = var.instance_number
-  workload_description                           = trimspace(var.workload_description) == "" ? null : var.workload_description
+  workload_description                           = local.normalized_workload_description
   location                                       = var.location
   sku                                            = var.key_vault_config.sku
   network_acls                                   = var.key_vault_config.networkAcls
@@ -325,7 +286,7 @@ module "key_vault" {
   keys                                           = var.key_vault_config.keys
   enable_default_private_endpoint                = local.private_networking_enabled
   default_private_endpoint_subnet_resource_id    = module.network.snet_pe_resource_id
-  default_private_dns_zone_virtual_network_links = local.postgresql_private_dns_zone_links
+  default_private_dns_zone_virtual_network_links = local.private_dns_zone_virtual_network_links
   diagnostic_settings                            = var.key_vault_config.diagnosticSettings
   lock                                           = var.key_vault_config.lock
   role_assignments                               = var.key_vault_config.roleAssignments
@@ -357,7 +318,7 @@ module "postgresql" {
   public_network_access                  = var.postgresql_config.publicNetworkAccess
   private_access_mode                    = var.postgresql_config.privateAccessMode
   delegated_subnet_resource_id           = local.postgresql_private_access_enabled ? module.network.snet_postgresql_resource_id : null
-  private_dns_zone_virtual_network_links = local.postgresql_private_dns_zone_links
+  private_dns_zone_virtual_network_links = local.private_dns_zone_virtual_network_links
   databases                              = var.postgresql_config.databases
   configurations                         = var.postgresql_config.configurations
   diagnostic_settings                    = var.postgresql_config.diagnosticSettings
