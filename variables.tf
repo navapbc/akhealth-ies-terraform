@@ -314,7 +314,6 @@ variable "key_vault_config" {
     })), [])
     enableVaultForTemplateDeployment = bool
     enableVaultForDiskEncryption     = bool
-    createMode                       = string
     sku                              = string
     enableVaultForDeployment         = bool
     networkAcls = object({

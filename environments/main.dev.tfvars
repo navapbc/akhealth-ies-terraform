@@ -83,7 +83,6 @@ app_service_config = {
 key_vault_config = {
   enablePurgeProtection            = false
   softDeleteRetentionInDays        = 90
-  createMode                       = "default"
   sku                              = "standard"
   enableVaultForDeployment         = true
   enableVaultForTemplateDeployment = true

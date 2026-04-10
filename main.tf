@@ -305,7 +305,7 @@ module "key_vault" {
   system_abbreviation                            = var.system_abbreviation
   environment_abbreviation                       = var.environment_abbreviation
   instance_number                                = var.instance_number
-  workload_description                           = var.workload_description
+  workload_description                           = trimspace(var.workload_description) == "" ? null : var.workload_description
   location                                       = var.location
   sku                                            = var.key_vault_config.sku
   network_acls                                   = var.key_vault_config.networkAcls
@@ -315,7 +315,6 @@ module "key_vault" {
   enable_vault_for_deployment                    = var.key_vault_config.enableVaultForDeployment
   enable_vault_for_template_deployment           = var.key_vault_config.enableVaultForTemplateDeployment
   enable_vault_for_disk_encryption               = var.key_vault_config.enableVaultForDiskEncryption
-  create_mode                                    = var.key_vault_config.createMode
   secrets                                        = var.key_vault_config.secrets
   keys                                           = var.key_vault_config.keys
   enable_default_private_endpoint                = local.private_networking_enabled

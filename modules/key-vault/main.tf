@@ -14,8 +14,8 @@ locals {
     global         = "global"
   }
 
-  region_abbreviation     = lookup(local.region_abbreviations, var.location, replace(var.location, " ", ""))
-  workload_segment        = trimspace(var.workload_description) == "" ? "" : "-${var.workload_description}"
+  region_abbreviation     = local.region_abbreviations[var.location]
+  workload_segment        = var.workload_description == null ? "" : "-${var.workload_description}"
   name                    = substr("kv-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 24)
   create_private_endpoint = var.enable_default_private_endpoint
 }
@@ -38,7 +38,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "default" {
   resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.default[0].name
   virtual_network_id    = each.value.virtualNetworkResourceId
-  registration_enabled  = try(each.value.registrationEnabled, false)
+  registration_enabled  = each.value.registrationEnabled == null ? false : each.value.registrationEnabled
 }
 
 resource "azurerm_key_vault" "this" {
@@ -59,10 +59,10 @@ resource "azurerm_key_vault" "this" {
   dynamic "network_acls" {
     for_each = var.network_acls == null ? [] : [var.network_acls]
     content {
-      bypass                     = try(network_acls.value.bypass, null)
-      default_action             = try(network_acls.value.defaultAction, null)
-      ip_rules                   = [for rule in try(network_acls.value.ipRules, []) : rule.value]
-      virtual_network_subnet_ids = [for rule in try(network_acls.value.virtualNetworkRules, []) : rule.id]
+      bypass                     = network_acls.value.bypass
+      default_action             = network_acls.value.defaultAction
+      ip_rules                   = [for rule in network_acls.value.ipRules : rule.value]
+      virtual_network_subnet_ids = [for rule in network_acls.value.virtualNetworkRules : rule.id]
     }
   }
 }
@@ -76,10 +76,10 @@ resource "azurerm_key_vault_secret" "this" {
   name            = each.value.name
   value           = each.value.value
   key_vault_id    = azurerm_key_vault.this.id
-  content_type    = try(each.value.contentType, null)
-  not_before_date = try(each.value.attributes.nbf, null) == null ? null : formatdate("YYYY-MM-DD'T'hh:mm:ssZ", timeadd("1970-01-01T00:00:00Z", "${each.value.attributes.nbf}s"))
-  expiration_date = try(each.value.attributes.exp, null) == null ? null : formatdate("YYYY-MM-DD'T'hh:mm:ssZ", timeadd("1970-01-01T00:00:00Z", "${each.value.attributes.exp}s"))
-  tags            = try(each.value.tags, var.tags)
+  content_type    = each.value.contentType
+  not_before_date = each.value.attributes == null || each.value.attributes.nbf == null ? null : formatdate("YYYY-MM-DD'T'hh:mm:ssZ", timeadd("1970-01-01T00:00:00Z", "${each.value.attributes.nbf}s"))
+  expiration_date = each.value.attributes == null || each.value.attributes.exp == null ? null : formatdate("YYYY-MM-DD'T'hh:mm:ssZ", timeadd("1970-01-01T00:00:00Z", "${each.value.attributes.exp}s"))
+  tags            = each.value.tags == null ? var.tags : each.value.tags
 }
 
 resource "azurerm_key_vault_key" "this" {
@@ -90,13 +90,13 @@ resource "azurerm_key_vault_key" "this" {
 
   name            = each.value.name
   key_vault_id    = azurerm_key_vault.this.id
-  key_type        = try(each.value.kty, "RSA")
-  key_size        = try(each.value.keySize, null)
-  curve           = try(each.value.curveName, null)
-  key_opts        = try(each.value.keyOps, null)
-  expiration_date = try(each.value.attributes.exp, null) == null ? null : formatdate("YYYY-MM-DD'T'hh:mm:ssZ", timeadd("1970-01-01T00:00:00Z", "${each.value.attributes.exp}s"))
-  not_before_date = try(each.value.attributes.nbf, null) == null ? null : formatdate("YYYY-MM-DD'T'hh:mm:ssZ", timeadd("1970-01-01T00:00:00Z", "${each.value.attributes.nbf}s"))
-  tags            = try(each.value.tags, var.tags)
+  key_type        = each.value.kty == null ? "RSA" : each.value.kty
+  key_size        = each.value.keySize
+  curve           = each.value.curveName
+  key_opts        = each.value.keyOps
+  expiration_date = each.value.attributes == null || each.value.attributes.exp == null ? null : formatdate("YYYY-MM-DD'T'hh:mm:ssZ", timeadd("1970-01-01T00:00:00Z", "${each.value.attributes.exp}s"))
+  not_before_date = each.value.attributes == null || each.value.attributes.nbf == null ? null : formatdate("YYYY-MM-DD'T'hh:mm:ssZ", timeadd("1970-01-01T00:00:00Z", "${each.value.attributes.nbf}s"))
+  tags            = each.value.tags == null ? var.tags : each.value.tags
 }
 
 resource "azurerm_private_endpoint" "default" {

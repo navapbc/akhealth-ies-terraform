@@ -16,11 +16,32 @@ variable "instance_number" {
 
 variable "workload_description" {
   type    = string
-  default = ""
+  default = null
+
+  validation {
+    condition     = var.workload_description == null || trimspace(var.workload_description) != ""
+    error_message = "workload_description must be null or a non-empty string."
+  }
 }
 
 variable "location" {
   type = string
+
+  validation {
+    condition = contains([
+      "eastus",
+      "eastus2",
+      "westus",
+      "westus2",
+      "westus3",
+      "centralus",
+      "northcentralus",
+      "southcentralus",
+      "westcentralus",
+      "global",
+    ], var.location)
+    error_message = "location must be one of the supported naming locations for this module."
+  }
 }
 
 variable "secrets" {
@@ -67,11 +88,6 @@ variable "enable_vault_for_disk_encryption" {
 
 variable "soft_delete_retention_in_days" {
   type = number
-}
-
-variable "create_mode" {
-  type    = string
-  default = "default"
 }
 
 variable "enable_purge_protection" {
