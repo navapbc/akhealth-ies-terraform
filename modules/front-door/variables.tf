@@ -14,6 +14,10 @@ variable "instance_number" {
   type = string
 }
 
+variable "region_abbreviation" {
+  type = string
+}
+
 variable "workload_description" {
   type    = string
   default = null
@@ -22,10 +26,6 @@ variable "workload_description" {
     condition     = var.workload_description == null || trimspace(var.workload_description) != ""
     error_message = "workload_description must be null or a non-empty string."
   }
-}
-
-variable "location" {
-  type = string
 }
 
 variable "sku" {

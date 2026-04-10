@@ -5,7 +5,7 @@ resource "azurerm_resource_group" "spoke" {
 }
 
 module "log_analytics_workspace" {
-  count  = local.existing_log_analytics_workspace_id == "" ? 1 : 0
+  count  = var.existing_log_analytics_id == null ? 1 : 0
   source = "./modules/log-analytics-workspace"
 
   resource_group_name                               = azurerm_resource_group.spoke.name
@@ -13,6 +13,7 @@ module "log_analytics_workspace" {
   environment_abbreviation                          = var.environment_abbreviation
   instance_number                                   = var.instance_number
   workload_description                              = local.normalized_workload_description
+  region_abbreviation                               = local.region_abbreviation
   location                                          = var.location
   tags                                              = var.tags
   sku                                               = var.log_analytics_config.sku
@@ -34,6 +35,7 @@ module "network" {
   environment_abbreviation                    = var.environment_abbreviation
   instance_number                             = var.instance_number
   workload_description                        = local.normalized_workload_description
+  region_abbreviation                         = local.region_abbreviation
   location                                    = var.location
   deploy_ase_v3                               = var.deploy_ase_v3
   deploy_private_networking                   = local.private_networking_enabled
@@ -77,6 +79,7 @@ module "app_service_environment" {
   environment_abbreviation               = var.environment_abbreviation
   instance_number                        = var.instance_number
   workload_description                   = local.normalized_workload_description
+  region_abbreviation                    = local.region_abbreviation
   location                               = var.location
   subnet_resource_id                     = module.network.snet_appsvc_resource_id
   cluster_settings                       = var.ase_config.clusterSettings
@@ -99,6 +102,7 @@ module "app_insights" {
   environment_abbreviation            = var.environment_abbreviation
   instance_number                     = var.instance_number
   workload_description                = local.normalized_workload_description
+  region_abbreviation                 = local.region_abbreviation
   location                            = var.location
   workspace_resource_id               = local.resolved_log_analytics_workspace_id
   application_type                    = var.app_insights_config.applicationType
@@ -124,6 +128,7 @@ module "app_service_plan" {
   environment_abbreviation            = var.environment_abbreviation
   instance_number                     = var.instance_number
   workload_description                = local.normalized_workload_description
+  region_abbreviation                 = local.region_abbreviation
   location                            = var.location
   sku_name                            = var.service_plan_config.sku
   sku_capacity                        = var.service_plan_config.skuCapacity
@@ -147,9 +152,9 @@ module "web_app" {
   environment_abbreviation                        = var.environment_abbreviation
   instance_number                                 = var.instance_number
   workload_description                            = local.normalized_workload_description
+  region_abbreviation                             = local.region_abbreviation
   location                                        = var.location
-  kind                                            = var.app_service_config.kind
-  service_plan_kind                               = var.service_plan_config.kind
+  workload_mode                                   = var.app_service_config.workloadMode
   server_farm_resource_id                         = local.resolved_app_service_plan_resource_id
   site_config                                     = var.app_service_config.siteConfig
   https_only                                      = var.app_service_config.httpsOnly
@@ -171,7 +176,6 @@ module "web_app" {
   role_assignments                                = var.app_service_config.roleAssignments
   diagnostic_settings                             = var.app_service_config.diagnosticSettings
   lock                                            = var.app_service_config.lock
-  reserved                                        = var.app_service_config.reserved
   tags                                            = var.tags
 }
 
@@ -202,7 +206,6 @@ module "front_door" {
   environment_abbreviation        = var.environment_abbreviation
   instance_number                 = var.instance_number
   workload_description            = local.normalized_workload_description
-  location                        = "global"
   sku                             = var.front_door_config.sku
   managed_identities              = var.front_door_config.managedIdentities
   origin_response_timeout_seconds = var.front_door_config.originResponseTimeoutSeconds
@@ -225,7 +228,7 @@ module "front_door_security_policy" {
   environment_abbreviation   = var.environment_abbreviation
   instance_number            = var.instance_number
   workload_description       = local.normalized_workload_description
-  location                   = var.location
+  region_abbreviation        = local.region_abbreviation
   profile_resource_id        = module.front_door[0].resource_id
   waf_policy_resource_id     = module.front_door_waf_policy[0].resource_id
   domain_resource_ids        = module.front_door[0].afd_endpoint_resource_ids
@@ -241,6 +244,7 @@ module "application_gateway" {
   environment_abbreviation         = var.environment_abbreviation
   instance_number                  = var.instance_number
   workload_description             = local.normalized_workload_description
+  region_abbreviation              = local.region_abbreviation
   location                         = var.location
   sku                              = var.app_gateway_config.sku
   capacity                         = var.app_gateway_config.capacity
@@ -249,7 +253,6 @@ module "application_gateway" {
   enable_http2                     = var.app_gateway_config.enableHttp2
   enable_fips                      = var.app_gateway_config.enableFips
   availability_zones               = var.app_gateway_config.availabilityZones
-  firewall_policy_resource_id      = null
   gateway_ip_configurations        = var.app_gateway_config.gatewayIPConfigurations
   frontend_ip_configurations       = var.app_gateway_config.frontendIPConfigurations
   frontend_ports                   = var.app_gateway_config.frontendPorts
@@ -273,6 +276,7 @@ module "key_vault" {
   environment_abbreviation                       = var.environment_abbreviation
   instance_number                                = var.instance_number
   workload_description                           = local.normalized_workload_description
+  region_abbreviation                            = local.region_abbreviation
   location                                       = var.location
   sku                                            = var.key_vault_config.sku
   network_acls                                   = var.key_vault_config.networkAcls
@@ -302,6 +306,7 @@ module "postgresql" {
   environment_abbreviation               = var.environment_abbreviation
   instance_number                        = var.instance_number
   workload_description                   = var.postgresql_config.workloadDescription
+  region_abbreviation                    = local.region_abbreviation
   location                               = var.location
   administrator_group_object_id          = var.postgresql_admin_group_config.objectId
   administrator_group_display_name       = var.postgresql_admin_group_config.displayName

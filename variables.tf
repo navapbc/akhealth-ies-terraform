@@ -71,6 +71,11 @@ variable "existing_log_analytics_id" {
   type        = string
   default     = null
   description = "Optional existing Log Analytics workspace resource ID."
+
+  validation {
+    condition     = var.existing_log_analytics_id == null || trimspace(var.existing_log_analytics_id) != ""
+    error_message = "existing_log_analytics_id must be null or a non-empty string."
+  }
 }
 
 variable "deploy_private_networking" {
@@ -211,7 +216,7 @@ variable "service_plan_config" {
     skuCapacity               = number
     zoneRedundant             = bool
     kind                      = string
-    existingPlanId            = string
+    existingPlanId            = optional(string)
     elasticScaleEnabled       = bool
     maximumElasticWorkerCount = number
     perSiteScaling            = bool
@@ -257,11 +262,16 @@ variable "service_plan_config" {
     condition     = contains(["windows", "linux"], var.service_plan_config.kind)
     error_message = "service_plan_config.kind must be either windows or linux."
   }
+
+  validation {
+    condition     = var.service_plan_config.existingPlanId == null || trimspace(var.service_plan_config.existingPlanId) != ""
+    error_message = "service_plan_config.existingPlanId must be null or a non-empty string."
+  }
 }
 
 variable "app_service_config" {
   type = object({
-    kind                              = string
+    workloadMode                      = string
     enabled                           = bool
     httpsOnly                         = bool
     clientAffinityEnabled             = bool
@@ -272,7 +282,6 @@ variable "app_service_config" {
     scmSiteAlsoStopped                = bool
     hyperV                            = bool
     storageAccountRequired            = bool
-    reserved                          = bool
     clientAffinityProxyEnabled        = bool
     clientAffinityPartitioningEnabled = bool
     managedIdentities = optional(object({
@@ -334,11 +343,21 @@ variable "app_service_config" {
   description = "Azure native App Service configuration object."
 
   validation {
+    condition = contains([
+      "windowsWebApp",
+      "linuxWebApp",
+      "windowsFunctionApp",
+      "linuxFunctionApp",
+    ], var.app_service_config.workloadMode)
+    error_message = "app_service_config.workloadMode must be one of: windowsWebApp, linuxWebApp, windowsFunctionApp, linuxFunctionApp."
+  }
+
+  validation {
     condition = (
-      !strcontains(lower(var.app_service_config.kind), "functionapp") ||
+      !contains(["windowsFunctionApp", "linuxFunctionApp"], var.app_service_config.workloadMode) ||
       var.app_service_config.functionHostStorageAccount != null
     )
-    error_message = "app_service_config.functionHostStorageAccount must be provided explicitly when app_service_config.kind is a function app."
+    error_message = "app_service_config.functionHostStorageAccount must be provided explicitly when app_service_config.workloadMode is a function app."
   }
 }
 

@@ -1,20 +1,6 @@
 locals {
-  region_abbreviations = {
-    eastus         = "eus"
-    eastus2        = "eus2"
-    westus         = "wus"
-    westus2        = "wus2"
-    westus3        = "wus3"
-    centralus      = "cus"
-    northcentralus = "ncus"
-    southcentralus = "scus"
-    westcentralus  = "wcus"
-    global         = "global"
-  }
-
-  region_abbreviation = lookup(local.region_abbreviations, var.location, replace(var.location, " ", ""))
   workload_segment    = var.workload_description == null ? "" : "-${var.workload_description}"
-  name                = substr("asp-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 40)
+  name                = substr("asp-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 40)
   os_type             = var.service_plan_kind == "linux" ? "Linux" : "Windows"
 }
 

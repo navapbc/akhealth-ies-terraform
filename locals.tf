@@ -26,17 +26,16 @@ locals {
     90
   )
 
-  existing_log_analytics_workspace_id   = var.existing_log_analytics_id == null ? "" : trimspace(var.existing_log_analytics_id)
   private_networking_enabled            = var.deploy_private_networking && trimspace(var.spoke_network_config.privateEndpointSubnetAddressSpace) != ""
   web_app_private_networking_enabled    = local.private_networking_enabled && !var.deploy_ase_v3
   postgresql_enabled                    = var.deploy_postgresql
   postgresql_private_networking_enabled = local.postgresql_enabled && var.deploy_private_networking
   postgresql_private_access_enabled     = local.postgresql_enabled && var.postgresql_config.privateAccessMode == "delegatedSubnet"
-  use_existing_app_service_plan         = trimspace(var.service_plan_config.existingPlanId) != ""
+  use_existing_app_service_plan         = var.service_plan_config.existingPlanId != null
   deploy_app_service_plan               = !local.use_existing_app_service_plan
   use_front_door_ingress                = var.spoke_network_config.ingressOption == "frontDoor"
   use_application_gateway_ingress       = var.spoke_network_config.ingressOption == "applicationGateway"
-  resolved_log_analytics_workspace_id   = local.existing_log_analytics_workspace_id != "" ? var.existing_log_analytics_id : module.log_analytics_workspace[0].resource_id
+  resolved_log_analytics_workspace_id   = var.existing_log_analytics_id != null ? var.existing_log_analytics_id : module.log_analytics_workspace[0].resource_id
   resolved_app_service_plan_resource_id = local.use_existing_app_service_plan ? var.service_plan_config.existingPlanId : module.app_service_plan[0].resource_id
   postgresql_role_assignments = concat(var.postgresql_config.roleAssignments, var.postgresql_config.grantAppServiceIdentityReaderRole ? [{
     key                = "app-service-reader"

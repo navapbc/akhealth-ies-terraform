@@ -1,21 +1,7 @@
 locals {
-  region_abbreviations = {
-    eastus         = "eus"
-    eastus2        = "eus2"
-    westus         = "wus"
-    westus2        = "wus2"
-    westus3        = "wus3"
-    centralus      = "cus"
-    northcentralus = "ncus"
-    southcentralus = "scus"
-    westcentralus  = "wcus"
-    global         = "global"
-  }
-
-  region_abbreviation    = local.region_abbreviations[var.location]
-  name                   = substr("psqlfx-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}-${var.workload_description}-${var.instance_number}", 0, 63)
+  name                   = substr("psqlfx-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-${var.workload_description}-${var.instance_number}", 0, 63)
   private_access_enabled = var.private_access_mode == "delegatedSubnet"
-  private_dns_zone_label = substr("pdz-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}-${var.workload_description}-${var.instance_number}", 0, 63)
+  private_dns_zone_label = substr("pdz-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-${var.workload_description}-${var.instance_number}", 0, 63)
   private_dns_zone_name  = "${local.private_dns_zone_label}.postgres.database.azure.com"
   storage_mb             = var.storage_size_gb * 1024
   public_network_access  = var.public_network_access == "Enabled"
@@ -39,7 +25,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
   resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.this[0].name
   virtual_network_id    = each.value.virtualNetworkResourceId
-  registration_enabled  = each.value.registrationEnabled == null ? false : each.value.registrationEnabled
+    registration_enabled  = coalesce(each.value.registrationEnabled, false)
 }
 
 resource "azurerm_postgresql_flexible_server" "this" {

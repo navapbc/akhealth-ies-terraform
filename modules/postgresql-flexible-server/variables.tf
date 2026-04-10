@@ -14,6 +14,10 @@ variable "instance_number" {
   type = string
 }
 
+variable "region_abbreviation" {
+  type = string
+}
+
 variable "workload_description" {
   type = string
 

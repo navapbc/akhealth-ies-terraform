@@ -85,8 +85,8 @@ Terraform refactors also have a state-address concern that does not usually feel
 
 ## Operational Differences From Bicep
 
-- A clean `terraform plan` means Azure matches Terraform state and configuration. It does not, by itself, prove that Terraform still matches the original Bicep desired state. When parity matters, use both `terraform plan` and Bicep `what-if`.
 - Strongly typed root and module contracts matter more than they may first appear to in Terraform. Loose `any` objects and `try(...)`-heavy patterns can hide intended state quickly and push mistakes later into plan/apply time.
+
 - Terraform offers stronger state and lifecycle tooling than Bicep for imports, drift management, and controlled refactors, but that extra control comes with extra operational complexity.
 
 resourceAbbreviation-systemAbbreviation-regionAbbreviation-environmentAbbreviation-workloadDescription-subWorkloadDescription-instanceNumber

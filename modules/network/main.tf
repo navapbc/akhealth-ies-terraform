@@ -1,20 +1,6 @@
 locals {
-  region_abbreviations = {
-    eastus         = "eus"
-    eastus2        = "eus2"
-    westus         = "wus"
-    westus2        = "wus2"
-    westus3        = "wus3"
-    centralus      = "cus"
-    northcentralus = "ncus"
-    southcentralus = "scus"
-    westcentralus  = "wcus"
-    global         = "global"
-  }
-
-  region_abbreviation = local.region_abbreviations[var.location]
   workload_segment    = var.workload_description == null ? "" : "-${var.workload_description}"
-  shared_name_prefix  = "${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}"
+  shared_name_prefix  = "${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}"
   shared_name_suffix  = "${local.workload_segment}-${var.instance_number}"
 
   names = {
@@ -32,7 +18,6 @@ locals {
     route_name      = substr("rte-${local.shared_name_prefix}-egresslockdown-${var.instance_number}", 0, 80)
   }
 
-  deploy_app_gateway                  = var.deploy_application_gateway_subnet
   create_private_endpoint_subnet      = var.deploy_private_networking
   create_postgresql_subnet            = var.deploy_postgresql_private_access
   create_app_gateway_subnet           = var.deploy_application_gateway_subnet
@@ -135,7 +120,7 @@ resource "azurerm_network_security_group" "ase" {
 }
 
 resource "azurerm_network_security_group" "app_gateway" {
-  count = local.deploy_app_gateway ? 1 : 0
+  count = local.create_app_gateway_subnet ? 1 : 0
 
   name                = local.names.nsg_appgw
   location            = var.location
