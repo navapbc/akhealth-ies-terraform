@@ -49,16 +49,27 @@ variable "public_network_access" {
 }
 
 variable "site_config" {
-  type = any
+  type = object({
+    alwaysOn          = optional(bool)
+    ftpsState         = optional(string)
+    healthCheckPath   = optional(string)
+    http20Enabled     = optional(bool)
+    minTlsVersion     = optional(string)
+    localMySqlEnabled = optional(bool)
+  })
 }
 
 variable "outbound_vnet_routing" {
-  type    = any
+  type = object({
+    allTraffic = optional(bool)
+  })
   default = null
 }
 
 variable "managed_identities" {
-  type    = any
+  type = object({
+    systemAssigned = bool
+  })
   default = null
 }
 
@@ -82,7 +93,11 @@ variable "disable_basic_publishing_credentials" {
 }
 
 variable "configs" {
-  type    = list(any)
+  type = list(object({
+    name                           = string
+    properties                     = optional(map(string))
+    useSolutionApplicationInsights = optional(bool)
+  }))
   default = []
 }
 
@@ -92,7 +107,9 @@ variable "solution_application_insights_connection_string" {
 }
 
 variable "function_host_storage_account" {
-  type    = any
+  type = object({
+    name = string
+  })
   default = null
 }
 
@@ -112,22 +129,56 @@ variable "default_private_dns_zone_name" {
 }
 
 variable "default_private_dns_zone_virtual_network_links" {
-  type    = list(any)
+  type = list(object({
+    name                     = string
+    virtualNetworkResourceId = string
+    registrationEnabled      = optional(bool)
+    resolutionPolicy         = optional(string)
+  }))
   default = []
 }
 
 variable "role_assignments" {
-  type    = list(any)
+  type = list(object({
+    roleDefinitionIdOrName             = string
+    principalId                        = string
+    principalType                      = optional(string)
+    description                        = optional(string)
+    condition                          = optional(string)
+    conditionVersion                   = optional(string)
+    delegatedManagedIdentityResourceId = optional(string)
+    name                               = optional(string)
+  }))
   default = []
 }
 
 variable "diagnostic_settings" {
-  type    = list(any)
+  type = list(object({
+    name                                = optional(string)
+    workspaceResourceId                 = optional(string)
+    logAnalyticsDestinationType         = optional(string)
+    storageAccountResourceId            = optional(string)
+    eventHubAuthorizationRuleResourceId = optional(string)
+    eventHubName                        = optional(string)
+    marketplacePartnerResourceId        = optional(string)
+    logCategoriesAndGroups = optional(list(object({
+      category      = optional(string)
+      categoryGroup = optional(string)
+    })), [])
+    metricCategories = optional(list(object({
+      category = string
+      enabled  = optional(bool)
+    })), [])
+  }))
   default = []
 }
 
 variable "lock" {
-  type    = any
+  type = object({
+    kind  = string
+    name  = optional(string)
+    notes = optional(string)
+  })
   default = null
 }
 

@@ -53,16 +53,45 @@ variable "public_network_access_for_query" {
 }
 
 variable "lock" {
-  type    = any
+  type = object({
+    kind  = string
+    name  = optional(string)
+    notes = optional(string)
+  })
   default = null
 }
 
 variable "role_assignments" {
-  type    = list(any)
+  type = list(object({
+    roleDefinitionIdOrName             = string
+    principalId                        = string
+    principalType                      = optional(string)
+    description                        = optional(string)
+    condition                          = optional(string)
+    conditionVersion                   = optional(string)
+    delegatedManagedIdentityResourceId = optional(string)
+    name                               = optional(string)
+  }))
   default = []
 }
 
 variable "diagnostic_settings" {
-  type    = list(any)
+  type = list(object({
+    name                                = optional(string)
+    workspaceResourceId                 = optional(string)
+    logAnalyticsDestinationType         = optional(string)
+    storageAccountResourceId            = optional(string)
+    eventHubAuthorizationRuleResourceId = optional(string)
+    eventHubName                        = optional(string)
+    marketplacePartnerResourceId        = optional(string)
+    logCategoriesAndGroups = optional(list(object({
+      category      = optional(string)
+      categoryGroup = optional(string)
+    })), [])
+    metricCategories = optional(list(object({
+      category = string
+      enabled  = optional(bool)
+    })), [])
+  }))
   default = []
 }

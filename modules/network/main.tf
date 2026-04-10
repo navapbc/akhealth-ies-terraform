@@ -253,10 +253,11 @@ resource "azurerm_subnet" "private_endpoint" {
 resource "azurerm_subnet" "postgresql" {
   count = local.create_postgresql_subnet ? 1 : 0
 
-  name                 = local.names.snet_postgresql
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.this.name
-  address_prefixes     = [var.postgresql_private_access_config.subnetAddressSpace]
+  name                              = local.names.snet_postgresql
+  resource_group_name               = var.resource_group_name
+  virtual_network_name              = azurerm_virtual_network.this.name
+  address_prefixes                  = [var.postgresql_private_access_config.subnetAddressSpace]
+  private_endpoint_network_policies = "Enabled"
 
   delegation {
     name = "postgresql-flexible-server"

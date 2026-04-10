@@ -7,6 +7,22 @@ variable "target_resource_id" {
 }
 
 variable "diagnostic_settings" {
-  type    = list(any)
+  type = list(object({
+    name                                = optional(string)
+    workspaceResourceId                 = optional(string)
+    logAnalyticsDestinationType         = optional(string)
+    storageAccountResourceId            = optional(string)
+    eventHubAuthorizationRuleResourceId = optional(string)
+    eventHubName                        = optional(string)
+    marketplacePartnerResourceId        = optional(string)
+    logCategoriesAndGroups = optional(list(object({
+      category      = optional(string)
+      categoryGroup = optional(string)
+    })), [])
+    metricCategories = optional(list(object({
+      category = string
+      enabled  = optional(bool)
+    })), [])
+  }))
   default = []
 }

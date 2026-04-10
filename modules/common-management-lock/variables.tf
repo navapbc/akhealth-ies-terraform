@@ -7,6 +7,10 @@ variable "name_suffix" {
 }
 
 variable "lock" {
-  type    = any
+  type = object({
+    kind  = string
+    name  = optional(string)
+    notes = optional(string)
+  })
   default = null
 }

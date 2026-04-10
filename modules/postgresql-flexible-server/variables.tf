@@ -88,32 +88,74 @@ variable "delegated_subnet_resource_id" {
 }
 
 variable "private_dns_zone_virtual_network_links" {
-  type    = list(any)
+  type = list(object({
+    name                     = string
+    virtualNetworkResourceId = string
+    registrationEnabled      = optional(bool)
+    resolutionPolicy         = optional(string)
+  }))
   default = []
 }
 
 variable "databases" {
-  type    = list(any)
+  type = list(object({
+    name      = string
+    collation = optional(string)
+    charset   = optional(string)
+  }))
   default = []
 }
 
 variable "configurations" {
-  type    = list(any)
+  type = list(object({
+    name   = string
+    source = optional(string)
+    value  = optional(string)
+  }))
   default = []
 }
 
 variable "diagnostic_settings" {
-  type    = list(any)
+  type = list(object({
+    name                                = optional(string)
+    workspaceResourceId                 = optional(string)
+    logAnalyticsDestinationType         = optional(string)
+    storageAccountResourceId            = optional(string)
+    eventHubAuthorizationRuleResourceId = optional(string)
+    eventHubName                        = optional(string)
+    marketplacePartnerResourceId        = optional(string)
+    logCategoriesAndGroups = optional(list(object({
+      category      = optional(string)
+      categoryGroup = optional(string)
+    })), [])
+    metricCategories = optional(list(object({
+      category = string
+      enabled  = optional(bool)
+    })), [])
+  }))
   default = []
 }
 
 variable "lock" {
-  type    = any
+  type = object({
+    kind  = string
+    name  = optional(string)
+    notes = optional(string)
+  })
   default = null
 }
 
 variable "role_assignments" {
-  type    = list(any)
+  type = list(object({
+    roleDefinitionIdOrName             = string
+    principalId                        = string
+    principalType                      = optional(string)
+    description                        = optional(string)
+    condition                          = optional(string)
+    conditionVersion                   = optional(string)
+    delegatedManagedIdentityResourceId = optional(string)
+    name                               = optional(string)
+  }))
   default = []
 }
 

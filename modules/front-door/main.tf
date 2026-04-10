@@ -57,7 +57,7 @@ resource "azurerm_cdn_frontdoor_endpoint" "this" {
   name                     = each.value.resolved_name
   cdn_frontdoor_profile_id = azurerm_cdn_frontdoor_profile.this.id
   enabled                  = try(each.value.enabledState, "Enabled") == "Enabled"
-  tags                     = try(each.value.tags, var.tags)
+  tags                     = coalesce(each.value.tags, var.tags)
 }
 
 resource "azurerm_cdn_frontdoor_origin_group" "this" {
@@ -69,7 +69,7 @@ resource "azurerm_cdn_frontdoor_origin_group" "this" {
   restore_traffic_time_to_healed_or_new_endpoint_in_minutes = try(each.value.trafficRestorationTimeToHealedOrNewEndpointsInMinutes, 10)
 
   load_balancing {
-    additional_latency_in_milliseconds = try(each.value.loadBalancingSettings.additionalLatencyInMilliseconds, 50)
+    additional_latency_in_milliseconds = coalesce(each.value.loadBalancingSettings.additionalLatencyInMilliseconds, 50)
     sample_size                        = try(each.value.loadBalancingSettings.sampleSize, 4)
     successful_samples_required        = try(each.value.loadBalancingSettings.successfulSamplesRequired, 3)
   }
@@ -77,10 +77,10 @@ resource "azurerm_cdn_frontdoor_origin_group" "this" {
   dynamic "health_probe" {
     for_each = try(each.value.healthProbeSettings, null) == null ? [] : [each.value.healthProbeSettings]
     content {
-      interval_in_seconds = try(health_probe.value.probeIntervalInSeconds, 100)
-      path                = try(health_probe.value.probePath, "/")
-      protocol            = try(health_probe.value.probeProtocol, "Https")
-      request_type        = try(health_probe.value.probeRequestType, "GET")
+      interval_in_seconds = coalesce(health_probe.value.probeIntervalInSeconds, 100)
+      path                = coalesce(health_probe.value.probePath, "/")
+      protocol            = coalesce(health_probe.value.probeProtocol, "Https")
+      request_type        = coalesce(health_probe.value.probeRequestType, "GET")
     }
   }
 }

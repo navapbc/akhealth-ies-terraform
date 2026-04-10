@@ -154,20 +154,17 @@ module "web_app" {
   virtual_network_subnet_resource_id              = local.web_app_private_networking_enabled && !try(var.service_plan_config.isCustomMode, false) ? module.network.snet_appsvc_resource_id : null
   enabled                                         = var.app_service_config.enabled
   disable_basic_publishing_credentials            = try(var.app_service_config.disableBasicPublishingCredentials, false)
-  configs                                         = try(var.app_service_config.configs, [])
+  configs                                         = var.app_service_config.configs
   solution_application_insights_connection_string = module.app_insights.connection_string
-  function_host_storage_account = try(one([
-    for config in try(var.app_service_config.configs, []) :
-    config.existingFunctionHostStorageAccount if try(config.name, "") == "appsettings" && try(config.existingFunctionHostStorageAccount, null) != null
-  ]), null)
-  enable_default_private_endpoint                = local.web_app_private_networking_enabled
-  default_private_endpoint_subnet_resource_id    = module.network.snet_pe_resource_id
-  default_private_dns_zone_virtual_network_links = local.spoke_private_dns_zone_links
-  role_assignments                               = try(var.app_service_config.roleAssignments, [])
-  diagnostic_settings                            = try(var.app_service_config.diagnosticSettings, [])
-  lock                                           = try(var.app_service_config.lock, null)
-  reserved                                       = try(var.app_service_config.reserved, false)
-  tags                                           = var.tags
+  function_host_storage_account                   = try(var.app_service_config.functionHostStorageAccount, null)
+  enable_default_private_endpoint                 = local.web_app_private_networking_enabled
+  default_private_endpoint_subnet_resource_id     = module.network.snet_pe_resource_id
+  default_private_dns_zone_virtual_network_links  = local.spoke_private_dns_zone_links
+  role_assignments                                = var.app_service_config.roleAssignments
+  diagnostic_settings                             = var.app_service_config.diagnosticSettings
+  lock                                            = try(var.app_service_config.lock, null)
+  reserved                                        = var.app_service_config.reserved
+  tags                                            = var.tags
 }
 
 module "front_door_waf_policy" {

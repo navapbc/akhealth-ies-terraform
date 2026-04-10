@@ -44,17 +44,23 @@ variable "subnet_spoke_private_endpoint_address_space" {
 }
 
 variable "application_gateway_config" {
-  type    = any
+  type = object({
+    subnetAddressSpace = string
+  })
   default = null
 }
 
 variable "postgresql_private_access_config" {
-  type    = any
+  type = object({
+    subnetAddressSpace = string
+  })
   default = null
 }
 
 variable "egress_firewall_config" {
-  type    = any
+  type = object({
+    internalIp = string
+  })
   default = null
 }
 
@@ -81,7 +87,24 @@ variable "log_analytics_workspace_id" {
 }
 
 variable "hub_peering_config" {
-  type    = any
+  type = object({
+    virtualNetworkResourceId  = string
+    virtualNetworkName        = string
+    resourceGroupName         = string
+    subscriptionId            = string
+    allowForwardedTraffic     = bool
+    allowGatewayTransit       = bool
+    allowVirtualNetworkAccess = bool
+    doNotVerifyRemoteGateways = bool
+    useRemoteGateways         = bool
+    reversePeeringConfig = optional(object({
+      allowForwardedTraffic     = bool
+      allowGatewayTransit       = bool
+      allowVirtualNetworkAccess = bool
+      doNotVerifyRemoteGateways = bool
+      useRemoteGateways         = bool
+    }))
+  })
   default = null
 }
 
@@ -96,12 +119,32 @@ variable "ddos_protection_plan_resource_id" {
 }
 
 variable "vnet_diagnostic_settings" {
-  type    = list(any)
+  type = list(object({
+    name                                = optional(string)
+    workspaceResourceId                 = optional(string)
+    logAnalyticsDestinationType         = optional(string)
+    storageAccountResourceId            = optional(string)
+    eventHubAuthorizationRuleResourceId = optional(string)
+    eventHubName                        = optional(string)
+    marketplacePartnerResourceId        = optional(string)
+    logCategoriesAndGroups = optional(list(object({
+      category      = optional(string)
+      categoryGroup = optional(string)
+    })), [])
+    metricCategories = optional(list(object({
+      category = string
+      enabled  = optional(bool)
+    })), [])
+  }))
   default = []
 }
 
 variable "vnet_lock" {
-  type    = any
+  type = object({
+    kind  = string
+    name  = optional(string)
+    notes = optional(string)
+  })
   default = null
 }
 
@@ -110,7 +153,16 @@ variable "disable_bgp_route_propagation" {
 }
 
 variable "vnet_role_assignments" {
-  type    = list(any)
+  type = list(object({
+    roleDefinitionIdOrName             = string
+    principalId                        = string
+    principalType                      = optional(string)
+    description                        = optional(string)
+    condition                          = optional(string)
+    conditionVersion                   = optional(string)
+    delegatedManagedIdentityResourceId = optional(string)
+    name                               = optional(string)
+  }))
   default = []
 }
 

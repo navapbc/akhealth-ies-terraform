@@ -24,12 +24,32 @@ variable "location" {
 }
 
 variable "secrets" {
-  type    = list(any)
+  type = list(object({
+    name        = string
+    value       = string
+    contentType = optional(string)
+    attributes = optional(object({
+      exp = optional(number)
+      nbf = optional(number)
+    }))
+    tags = optional(map(string))
+  }))
   default = []
 }
 
 variable "keys" {
-  type    = list(any)
+  type = list(object({
+    name      = string
+    kty       = optional(string)
+    keySize   = optional(number)
+    curveName = optional(string)
+    keyOps    = optional(list(string))
+    attributes = optional(object({
+      exp = optional(number)
+      nbf = optional(number)
+    }))
+    tags = optional(map(string))
+  }))
   default = []
 }
 
@@ -63,7 +83,16 @@ variable "sku" {
 }
 
 variable "network_acls" {
-  type    = any
+  type = object({
+    bypass        = optional(string)
+    defaultAction = optional(string)
+    ipRules = optional(list(object({
+      value = string
+    })), [])
+    virtualNetworkRules = optional(list(object({
+      id = string
+    })), [])
+  })
   default = null
 }
 
@@ -72,12 +101,25 @@ variable "public_network_access" {
 }
 
 variable "lock" {
-  type    = any
+  type = object({
+    kind  = string
+    name  = optional(string)
+    notes = optional(string)
+  })
   default = null
 }
 
 variable "role_assignments" {
-  type    = list(any)
+  type = list(object({
+    roleDefinitionIdOrName             = string
+    principalId                        = string
+    principalType                      = optional(string)
+    description                        = optional(string)
+    condition                          = optional(string)
+    conditionVersion                   = optional(string)
+    delegatedManagedIdentityResourceId = optional(string)
+    name                               = optional(string)
+  }))
   default = []
 }
 
@@ -97,7 +139,12 @@ variable "default_private_dns_zone_name" {
 }
 
 variable "default_private_dns_zone_virtual_network_links" {
-  type    = list(any)
+  type = list(object({
+    name                     = string
+    virtualNetworkResourceId = string
+    registrationEnabled      = optional(bool)
+    resolutionPolicy         = optional(string)
+  }))
   default = []
 }
 
@@ -107,6 +154,22 @@ variable "tags" {
 }
 
 variable "diagnostic_settings" {
-  type    = list(any)
+  type = list(object({
+    name                                = optional(string)
+    workspaceResourceId                 = optional(string)
+    logAnalyticsDestinationType         = optional(string)
+    storageAccountResourceId            = optional(string)
+    eventHubAuthorizationRuleResourceId = optional(string)
+    eventHubName                        = optional(string)
+    marketplacePartnerResourceId        = optional(string)
+    logCategoriesAndGroups = optional(list(object({
+      category      = optional(string)
+      categoryGroup = optional(string)
+    })), [])
+    metricCategories = optional(list(object({
+      category = string
+      enabled  = optional(bool)
+    })), [])
+  }))
   default = []
 }
