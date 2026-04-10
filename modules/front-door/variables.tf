@@ -68,6 +68,25 @@ variable "origin_groups" {
       }))
     }))
   }))
+
+  validation {
+    condition = (
+      length(var.origin_groups) > 0 &&
+      length(var.origin_groups) == length(distinct([
+        for origin_group in var.origin_groups :
+        origin_group.name
+      ]))
+    )
+    error_message = "origin_groups must contain at least one uniquely named origin group."
+  }
+
+  validation {
+    condition = alltrue([
+      for origin_group in var.origin_groups :
+      length(origin_group.origins) > 0
+    ])
+    error_message = "Each origin group must contain at least one origin."
+  }
 }
 
 variable "afd_endpoints" {
@@ -87,6 +106,30 @@ variable "afd_endpoints" {
       supportedProtocols  = list(string)
     }))
   }))
+
+  validation {
+    condition = (
+      length(var.afd_endpoints) > 0 &&
+      length(var.afd_endpoints) == length(distinct([
+        for endpoint in var.afd_endpoints :
+        endpoint.name
+      ]))
+    )
+    error_message = "afd_endpoints must contain at least one uniquely named endpoint."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for endpoint in var.afd_endpoints : [
+        for route in endpoint.routes :
+        contains([
+          for origin_group in var.origin_groups :
+          origin_group.name
+        ], route.originGroupName)
+      ]
+    ]))
+    error_message = "Each route must reference an origin group declared in origin_groups."
+  }
 }
 
 variable "role_assignments" {

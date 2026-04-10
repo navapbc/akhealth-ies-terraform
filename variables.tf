@@ -273,15 +273,8 @@ variable "app_service_config" {
     enabled                           = bool
     httpsOnly                         = bool
     clientAffinityEnabled             = bool
-    clientCertEnabled                 = bool
     disableBasicPublishingCredentials = bool
     publicNetworkAccess               = optional(string)
-    redundancyMode                    = string
-    scmSiteAlsoStopped                = bool
-    hyperV                            = bool
-    storageAccountRequired            = bool
-    clientAffinityProxyEnabled        = bool
-    clientAffinityPartitioningEnabled = bool
     managedIdentities = optional(object({
       systemAssigned = bool
     }))
@@ -331,7 +324,6 @@ variable "app_service_config" {
       delegatedManagedIdentityResourceId = optional(string)
       name                               = optional(string)
     })), [])
-    slots = optional(list(any), [])
     lock = optional(object({
       kind  = string
       name  = optional(string)
@@ -356,6 +348,22 @@ variable "app_service_config" {
       var.app_service_config.functionHostStorageAccount != null
     )
     error_message = "app_service_config.functionHostStorageAccount must be provided explicitly when app_service_config.workloadMode is a function app."
+  }
+
+  validation {
+    condition = (
+      contains(["windowsFunctionApp", "linuxFunctionApp"], var.app_service_config.workloadMode) ||
+      var.app_service_config.functionHostStorageAccount == null
+    )
+    error_message = "app_service_config.functionHostStorageAccount must be omitted for web apps."
+  }
+
+  validation {
+    condition = (
+      var.app_service_config.publicNetworkAccess == null ||
+      contains(["Enabled", "Disabled"], var.app_service_config.publicNetworkAccess)
+    )
+    error_message = "app_service_config.publicNetworkAccess must be Enabled, Disabled, or omitted."
   }
 }
 
@@ -572,14 +580,11 @@ variable "app_gateway_config" {
       sslCertificateName          = optional(string)
     }))
     requestRoutingRules = list(object({
-      name                      = string
-      priority                  = optional(number)
-      ruleType                  = string
-      httpListenerName          = string
-      backendAddressPoolName    = optional(string)
-      backendHttpSettingsName   = optional(string)
-      redirectConfigurationName = optional(string)
-      urlPathMapName            = optional(string)
+      name                    = string
+      priority                = number
+      httpListenerName        = string
+      backendAddressPoolName  = string
+      backendHttpSettingsName = string
     }))
     roleAssignments = optional(list(object({
       key                                = string
@@ -757,6 +762,49 @@ variable "front_door_config" {
     })), [])
   })
   description = "Azure native Front Door configuration object."
+
+  validation {
+    condition = (
+      length(var.front_door_config.originGroups) > 0 &&
+      length(var.front_door_config.originGroups) == length(distinct([
+        for origin_group in var.front_door_config.originGroups :
+        origin_group.name
+      ]))
+    )
+    error_message = "front_door_config.originGroups must contain at least one uniquely named origin group."
+  }
+
+  validation {
+    condition = alltrue([
+      for origin_group in var.front_door_config.originGroups :
+      length(origin_group.origins) > 0
+    ])
+    error_message = "Each front_door_config.originGroups entry must contain at least one origin."
+  }
+
+  validation {
+    condition = (
+      length(var.front_door_config.afdEndpoints) > 0 &&
+      length(var.front_door_config.afdEndpoints) == length(distinct([
+        for endpoint in var.front_door_config.afdEndpoints :
+        endpoint.name
+      ]))
+    )
+    error_message = "front_door_config.afdEndpoints must contain at least one uniquely named endpoint."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for endpoint in var.front_door_config.afdEndpoints : [
+        for route in endpoint.routes :
+        contains([
+          for origin_group in var.front_door_config.originGroups :
+          origin_group.name
+        ], route.originGroupName)
+      ]
+    ]))
+    error_message = "Each Front Door route must reference an origin group declared in front_door_config.originGroups."
+  }
 }
 
 variable "ase_config" {

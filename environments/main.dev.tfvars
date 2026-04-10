@@ -62,11 +62,8 @@ service_plan_config = {
 app_service_config = {
   workloadMode                      = "windowsWebApp"
   httpsOnly                         = true
-  clientCertEnabled                 = false
   disableBasicPublishingCredentials = true
   publicNetworkAccess               = "Disabled"
-  redundancyMode                    = "None"
-  scmSiteAlsoStopped                = false
   siteConfig = {
     alwaysOn        = false
     ftpsState       = "FtpsOnly"
@@ -74,19 +71,14 @@ app_service_config = {
     healthCheckPath = "/healthz"
     http20Enabled   = true
   }
-  hyperV = false
   managedIdentities = {
     systemAssigned = true
   }
-  enabled                           = true
-  storageAccountRequired            = false
-  clientAffinityEnabled             = false
-  clientAffinityProxyEnabled        = true
-  clientAffinityPartitioningEnabled = false
-  appSettings                       = {}
-  useSolutionApplicationInsights    = false
-  diagnosticSettings                = []
-  slots                             = []
+  enabled                        = true
+  clientAffinityEnabled          = false
+  appSettings                    = {}
+  useSolutionApplicationInsights = false
+  diagnosticSettings             = []
 }
 
 key_vault_config = {

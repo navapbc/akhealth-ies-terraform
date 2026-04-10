@@ -1,15 +1,38 @@
 locals {
-  workload_segment    = var.workload_description == null ? "" : "-${var.workload_description}"
-  name                = substr("agw-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 80)
-  identity_enabled    = var.managed_identities.systemAssigned
-  autoscale_enabled   = var.scale_mode == "autoscale"
+  workload_segment  = var.workload_description == null ? "" : "-${var.workload_description}"
+  name              = substr("agw-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 80)
+  identity_enabled  = var.managed_identities.systemAssigned
+  autoscale_enabled = var.scale_mode == "autoscale"
+  frontend_ip_configuration_names = [
+    for configuration in var.frontend_ip_configurations :
+    configuration.name
+  ]
+  frontend_port_names = [
+    for port in var.frontend_ports :
+    port.name
+  ]
+  backend_address_pool_names = [
+    for pool in var.backend_address_pools :
+    pool.name
+  ]
+  backend_http_settings_names = [
+    for settings in var.backend_http_settings_collection :
+    settings.name
+  ]
+  probe_names = [
+    for probe in var.probes :
+    probe.name
+  ]
+  http_listener_names = [
+    for listener in var.http_listeners :
+    listener.name
+  ]
 }
 
 resource "azurerm_application_gateway" "this" {
   name                = local.name
   resource_group_name = var.resource_group_name
   location            = var.location
-  firewall_policy_id  = var.firewall_policy_resource_id
   enable_http2        = var.enable_http2
   fips_enabled        = var.enable_fips
   tags                = var.tags
@@ -119,14 +142,12 @@ resource "azurerm_application_gateway" "this" {
   dynamic "request_routing_rule" {
     for_each = var.request_routing_rules
     content {
-      name                        = request_routing_rule.value.name
-      priority                    = request_routing_rule.value.priority
-      rule_type                   = request_routing_rule.value.ruleType
-      http_listener_name          = request_routing_rule.value.httpListenerName
-      backend_address_pool_name   = request_routing_rule.value.backendAddressPoolName
-      backend_http_settings_name  = request_routing_rule.value.backendHttpSettingsName
-      redirect_configuration_name = request_routing_rule.value.redirectConfigurationName
-      url_path_map_name           = request_routing_rule.value.urlPathMapName
+      name                       = request_routing_rule.value.name
+      priority                   = request_routing_rule.value.priority
+      rule_type                  = "Basic"
+      http_listener_name         = request_routing_rule.value.httpListenerName
+      backend_address_pool_name  = request_routing_rule.value.backendAddressPoolName
+      backend_http_settings_name = request_routing_rule.value.backendHttpSettingsName
     }
   }
 
@@ -137,7 +158,7 @@ resource "azurerm_application_gateway" "this" {
         var.capacity != null &&
         var.autoscale_min_capacity == null &&
         var.autoscale_max_capacity == null
-      ) || (
+        ) || (
         var.scale_mode == "autoscale" &&
         var.capacity == null &&
         var.autoscale_min_capacity != null &&
@@ -145,6 +166,33 @@ resource "azurerm_application_gateway" "this" {
         var.autoscale_max_capacity >= var.autoscale_min_capacity
       )
       error_message = "Application Gateway scaling must be explicit: fixed mode requires capacity only, and autoscale mode requires autoscale_min_capacity and autoscale_max_capacity only."
+    }
+
+    precondition {
+      condition = alltrue([
+        for listener in var.http_listeners :
+        contains(local.frontend_ip_configuration_names, listener.frontendIpConfigurationName) &&
+        contains(local.frontend_port_names, listener.frontendPortName)
+      ])
+      error_message = "Each http_listener must reference a declared frontend_ip_configuration and frontend_port."
+    }
+
+    precondition {
+      condition = alltrue([
+        for settings in var.backend_http_settings_collection :
+        settings.probeName == null || contains(local.probe_names, settings.probeName)
+      ])
+      error_message = "Each backend_http_settings_collection.probeName must reference a declared probe."
+    }
+
+    precondition {
+      condition = alltrue([
+        for rule in var.request_routing_rules :
+        contains(local.http_listener_names, rule.httpListenerName) &&
+        contains(local.backend_address_pool_names, rule.backendAddressPoolName) &&
+        contains(local.backend_http_settings_names, rule.backendHttpSettingsName)
+      ])
+      error_message = "Each request_routing_rule must reference declared http_listener, backend_address_pool, and backend_http_settings_collection entries."
     }
   }
 }
