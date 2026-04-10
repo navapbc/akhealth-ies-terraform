@@ -22,6 +22,7 @@ crash.*.log
 *.tfvars.json
 *.auto.tfvars
 *.auto.tfvars.json
+!environments/*.tfvars
 
 
 backend.hcl

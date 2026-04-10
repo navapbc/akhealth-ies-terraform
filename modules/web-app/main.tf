@@ -1,0 +1,266 @@
+locals {
+  region_abbreviations = {
+    eastus         = "eus"
+    eastus2        = "eus2"
+    westus         = "wus"
+    westus2        = "wus2"
+    westus3        = "wus3"
+    centralus      = "cus"
+    northcentralus = "ncus"
+    southcentralus = "scus"
+    westcentralus  = "wcus"
+    global         = "global"
+  }
+
+  region_abbreviation           = lookup(local.region_abbreviations, var.location, replace(var.location, " ", ""))
+  workload_segment              = trimspace(var.workload_description) == "" ? "" : "-${var.workload_description}"
+  name                          = substr("app-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 60)
+  kind_lower                    = lower(var.kind)
+  is_function_app               = strcontains(local.kind_lower, "functionapp")
+  is_linux                      = strcontains(local.kind_lower, "linux") || try(var.reserved, false) || lower(var.service_plan_kind) == "linux"
+  create_private_endpoint       = var.enable_default_private_endpoint
+  identity_enabled              = try(var.managed_identities.systemAssigned, false)
+  public_network_access_enabled = var.public_network_access == null ? null : var.public_network_access == "Enabled"
+  merged_app_settings = merge(
+    try(one([for config in var.configs : config.properties if try(config.name, "") == "appsettings"]), {}),
+    try(one([
+      for config in var.configs : {
+        APPLICATIONINSIGHTS_CONNECTION_STRING = var.solution_application_insights_connection_string
+      } if try(config.name, "") == "appsettings" && try(config.useSolutionApplicationInsights, false)
+    ]), {})
+  )
+}
+
+resource "azurerm_private_dns_zone" "default" {
+  count = local.create_private_endpoint ? 1 : 0
+
+  name                = var.default_private_dns_zone_name
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "default" {
+  for_each = local.create_private_endpoint ? {
+    for link in var.default_private_dns_zone_virtual_network_links :
+    link.name => link
+  } : {}
+
+  name                  = each.value.name
+  resource_group_name   = var.resource_group_name
+  private_dns_zone_name = azurerm_private_dns_zone.default[0].name
+  virtual_network_id    = each.value.virtualNetworkResourceId
+  registration_enabled  = try(each.value.registrationEnabled, false)
+}
+
+resource "azurerm_windows_web_app" "this" {
+  count = !local.is_function_app && !local.is_linux ? 1 : 0
+
+  name                                           = local.name
+  location                                       = var.location
+  resource_group_name                            = var.resource_group_name
+  service_plan_id                                = var.server_farm_resource_id
+  enabled                                        = var.enabled
+  https_only                                     = var.https_only
+  client_affinity_enabled                        = var.client_affinity_enabled
+  public_network_access_enabled                  = local.public_network_access_enabled
+  virtual_network_subnet_id                      = var.virtual_network_subnet_resource_id
+  key_vault_reference_identity_id                = var.key_vault_access_identity_resource_id
+  tags                                           = var.tags
+  app_settings                                   = local.merged_app_settings
+  ftp_publish_basic_authentication_enabled       = !var.disable_basic_publishing_credentials
+  webdeploy_publish_basic_authentication_enabled = !var.disable_basic_publishing_credentials
+
+  dynamic "identity" {
+    for_each = local.identity_enabled ? [1] : []
+    content {
+      type = "SystemAssigned"
+    }
+  }
+
+  site_config {
+    always_on                         = try(var.site_config.alwaysOn, null)
+    ftps_state                        = try(var.site_config.ftpsState, null)
+    health_check_path                 = try(var.site_config.healthCheckPath, null)
+    health_check_eviction_time_in_min = try(var.site_config.healthCheckPath, null) == null ? null : 2
+    http2_enabled                     = try(var.site_config.http20Enabled, null)
+    minimum_tls_version               = try(var.site_config.minTlsVersion, null)
+    use_32_bit_worker                 = false
+    vnet_route_all_enabled            = try(var.outbound_vnet_routing.allTraffic, null)
+    websockets_enabled                = true
+  }
+}
+
+resource "azurerm_linux_web_app" "this" {
+  count = !local.is_function_app && local.is_linux ? 1 : 0
+
+  name                                     = local.name
+  location                                 = var.location
+  resource_group_name                      = var.resource_group_name
+  service_plan_id                          = var.server_farm_resource_id
+  enabled                                  = var.enabled
+  https_only                               = var.https_only
+  client_affinity_enabled                  = var.client_affinity_enabled
+  public_network_access_enabled            = local.public_network_access_enabled
+  virtual_network_subnet_id                = var.virtual_network_subnet_resource_id
+  key_vault_reference_identity_id          = var.key_vault_access_identity_resource_id
+  tags                                     = var.tags
+  app_settings                             = local.merged_app_settings
+  ftp_publish_basic_authentication_enabled = !var.disable_basic_publishing_credentials
+
+  dynamic "identity" {
+    for_each = local.identity_enabled ? [1] : []
+    content {
+      type = "SystemAssigned"
+    }
+  }
+
+  site_config {
+    always_on                         = try(var.site_config.alwaysOn, null)
+    ftps_state                        = try(var.site_config.ftpsState, null)
+    health_check_path                 = try(var.site_config.healthCheckPath, null)
+    health_check_eviction_time_in_min = try(var.site_config.healthCheckPath, null) == null ? null : 2
+    http2_enabled                     = try(var.site_config.http20Enabled, null)
+    minimum_tls_version               = try(var.site_config.minTlsVersion, null)
+  }
+}
+
+resource "azurerm_windows_function_app" "this" {
+  count = local.is_function_app && !local.is_linux ? 1 : 0
+
+  name                                           = local.name
+  location                                       = var.location
+  resource_group_name                            = var.resource_group_name
+  service_plan_id                                = var.server_farm_resource_id
+  enabled                                        = var.enabled
+  https_only                                     = var.https_only
+  public_network_access_enabled                  = local.public_network_access_enabled
+  virtual_network_subnet_id                      = var.virtual_network_subnet_resource_id
+  storage_account_name                           = try(var.function_host_storage_account.name, null)
+  storage_uses_managed_identity                  = true
+  tags                                           = var.tags
+  app_settings                                   = local.merged_app_settings
+  ftp_publish_basic_authentication_enabled       = !var.disable_basic_publishing_credentials
+  webdeploy_publish_basic_authentication_enabled = !var.disable_basic_publishing_credentials
+
+  dynamic "identity" {
+    for_each = local.identity_enabled ? [1] : []
+    content {
+      type = "SystemAssigned"
+    }
+  }
+
+  site_config {
+    always_on                         = try(var.site_config.alwaysOn, null)
+    ftps_state                        = try(var.site_config.ftpsState, null)
+    health_check_path                 = try(var.site_config.healthCheckPath, null)
+    health_check_eviction_time_in_min = try(var.site_config.healthCheckPath, null) == null ? null : 2
+    http2_enabled                     = try(var.site_config.http20Enabled, null)
+    minimum_tls_version               = try(var.site_config.minTlsVersion, null)
+  }
+}
+
+resource "azurerm_linux_function_app" "this" {
+  count = local.is_function_app && local.is_linux ? 1 : 0
+
+  name                                     = local.name
+  location                                 = var.location
+  resource_group_name                      = var.resource_group_name
+  service_plan_id                          = var.server_farm_resource_id
+  enabled                                  = var.enabled
+  https_only                               = var.https_only
+  public_network_access_enabled            = local.public_network_access_enabled
+  virtual_network_subnet_id                = var.virtual_network_subnet_resource_id
+  storage_account_name                     = try(var.function_host_storage_account.name, null)
+  storage_uses_managed_identity            = true
+  tags                                     = var.tags
+  app_settings                             = local.merged_app_settings
+  ftp_publish_basic_authentication_enabled = !var.disable_basic_publishing_credentials
+
+  dynamic "identity" {
+    for_each = local.identity_enabled ? [1] : []
+    content {
+      type = "SystemAssigned"
+    }
+  }
+
+  site_config {
+    always_on                         = try(var.site_config.alwaysOn, null)
+    ftps_state                        = try(var.site_config.ftpsState, null)
+    health_check_path                 = try(var.site_config.healthCheckPath, null)
+    health_check_eviction_time_in_min = try(var.site_config.healthCheckPath, null) == null ? null : 2
+    http2_enabled                     = try(var.site_config.http20Enabled, null)
+    minimum_tls_version               = try(var.site_config.minTlsVersion, null)
+  }
+}
+
+locals {
+  app_id = coalesce(
+    try(azurerm_windows_web_app.this[0].id, null),
+    try(azurerm_linux_web_app.this[0].id, null),
+    try(azurerm_windows_function_app.this[0].id, null),
+    try(azurerm_linux_function_app.this[0].id, null)
+  )
+  app_name = coalesce(
+    try(azurerm_windows_web_app.this[0].name, null),
+    try(azurerm_linux_web_app.this[0].name, null),
+    try(azurerm_windows_function_app.this[0].name, null),
+    try(azurerm_linux_function_app.this[0].name, null)
+  )
+  default_hostname = coalesce(
+    try(azurerm_windows_web_app.this[0].default_hostname, null),
+    try(azurerm_linux_web_app.this[0].default_hostname, null),
+    try(azurerm_windows_function_app.this[0].default_hostname, null),
+    try(azurerm_linux_function_app.this[0].default_hostname, null)
+  )
+  principal_id = coalesce(
+    try(azurerm_windows_web_app.this[0].identity[0].principal_id, null),
+    try(azurerm_linux_web_app.this[0].identity[0].principal_id, null),
+    try(azurerm_windows_function_app.this[0].identity[0].principal_id, null),
+    try(azurerm_linux_function_app.this[0].identity[0].principal_id, null)
+  )
+}
+
+resource "azurerm_private_endpoint" "default" {
+  count = local.create_private_endpoint ? 1 : 0
+
+  name                = "pep-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}-appservice-${var.instance_number}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  subnet_id           = var.default_private_endpoint_subnet_resource_id
+  tags                = var.tags
+
+  private_service_connection {
+    name                           = "plsc-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}-appservice-${var.instance_number}"
+    private_connection_resource_id = local.app_id
+    subresource_names              = ["sites"]
+    is_manual_connection           = false
+  }
+
+  private_dns_zone_group {
+    name                 = local.name
+    private_dns_zone_ids = [azurerm_private_dns_zone.default[0].id]
+  }
+}
+
+module "role_assignments" {
+  source = "../common-role-assignments"
+
+  scope            = local.app_id
+  role_assignments = var.role_assignments
+}
+
+module "diagnostic_settings" {
+  source = "../common-diagnostic-settings"
+
+  name_prefix         = local.name
+  target_resource_id  = local.app_id
+  diagnostic_settings = var.diagnostic_settings
+}
+
+module "management_lock" {
+  source = "../common-management-lock"
+
+  scope       = local.app_id
+  name_suffix = local.name
+  lock        = var.lock
+}
