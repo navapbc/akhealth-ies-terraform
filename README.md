@@ -1,5 +1,14 @@
 # akhealth-ies-terraform
-Backend setup script
+
+This repo is configured to use an Azure Blob backend with the following values:
+
+- Resource group: `rg-iep-eus-dev-operations-01`
+- Storage account: `stiepeusdevtf001`
+- Container: `stc-iep-eus-dev-tfstate-001`
+- State key: `main.dev.tfstate`
+- Auth mode: Azure AD (`use_azuread_auth = true`)
+
+Backend setup script:
 
 az group create \
   --name rg-iep-eus-dev-operations-01 \
@@ -19,10 +28,18 @@ az storage container create \
   --account-name stiepeusdevtf001 \
   --auth-mode login
 
+Minimum role needed to store in storage account blobs
+az role assignment create \
+  --assignee-object-id \
+  --assignee-principal-type User \
+  --role "Storage Blob Data Contributor" \
+  --scope "/resource/path/to/storageAccount/providers/Microsoft.Storage/storageAccounts/stiepeusdevtf001"
+
+
 ## Usage
 
 ```bash
-terraform init
+terraform init -reconfigure
 terraform plan -var-file=environments/main.dev.tfvars
 ```
 
