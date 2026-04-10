@@ -24,7 +24,8 @@ resource "azurerm_private_dns_zone_virtual_network_link" "default" {
   resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.default[0].name
   virtual_network_id    = each.value.virtualNetworkResourceId
-    registration_enabled  = coalesce(each.value.registrationEnabled, false)
+  registration_enabled  = coalesce(each.value.registrationEnabled, false)
+  resolution_policy     = each.value.resolutionPolicy
 }
 
 resource "azurerm_key_vault" "this" {
@@ -88,14 +89,14 @@ resource "azurerm_key_vault_key" "this" {
 resource "azurerm_private_endpoint" "default" {
   count = local.create_private_endpoint ? 1 : 0
 
-    name                = "pep-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-keyvault-${var.instance_number}"
+  name                = "pep-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-keyvault-${var.instance_number}"
   location            = var.location
   resource_group_name = var.resource_group_name
   subnet_id           = var.default_private_endpoint_subnet_resource_id
   tags                = var.tags
 
   private_service_connection {
-      name                           = "plsc-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-keyvault-${var.instance_number}"
+    name                           = "plsc-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-keyvault-${var.instance_number}"
     private_connection_resource_id = azurerm_key_vault.this.id
     subresource_names              = ["vault"]
     is_manual_connection           = false

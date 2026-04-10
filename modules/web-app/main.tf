@@ -47,6 +47,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "default" {
   private_dns_zone_name = azurerm_private_dns_zone.default[0].name
   virtual_network_id    = each.value.virtualNetworkResourceId
   registration_enabled  = each.value.registrationEnabled == null ? false : each.value.registrationEnabled
+  resolution_policy     = each.value.resolutionPolicy
 }
 
 resource "azurerm_windows_web_app" "this" {

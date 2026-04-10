@@ -70,12 +70,15 @@ This repo tracks the Bicep implementation as closely as the AzureRM provider all
 - App Service Environment `upgradePreference`
 - Key Vault `createMode`
 - ARM/Bicep `guid()`-derived role assignment names are not reproduced automatically in this AzureRM-only translation, so semantically equivalent role assignments may still appear with different resource names in what-if output unless an explicit `name` is supplied
+- Spoke VNet `enableVmProtection`
 - Web App `clientAffinityProxyEnabled`
 - Web App `clientAffinityPartitioningEnabled`
 - Web App `siteConfig.netFrameworkVersion`
 - The Bicep-only Front Door private endpoint auto-approval workflow that uses `Microsoft.Resources/deploymentScripts`
 
 The Front Door private endpoint auto-approval gap also means the supporting user-assigned identity and resource-group `Contributor` assignment used only by that deployment script are intentionally not created in this AzureRM-only translation. Terraform can still deploy the Front Door resources successfully, but private endpoint connection approval may remain a manual post-deploy step where that Bicep workflow would have auto-approved it.
+
+For Web Apps specifically, the remaining AzureRM parity gaps currently confirmed in this repo are `clientAffinityProxyEnabled`, `clientAffinityPartitioningEnabled`, and `siteConfig.netFrameworkVersion`. By contrast, `siteConfig.ftpsState`, `siteConfig.healthCheckPath`, `siteConfig.localMySqlEnabled`, and `siteConfig.minTlsVersion` are already modeled in Terraform and may still appear in ARM/Bicep `what-if` output as representation noise even when the live site matches the intended values.
 
 Provider-shape differences that are semantically equivalent should generally be treated as documentation items rather than conversion bugs. In practice that means a different role assignment GUID or ARM-generated resource name is acceptable when the principal, role, and scope are otherwise the same.
 

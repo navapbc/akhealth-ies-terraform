@@ -92,14 +92,18 @@ variable "deploy_postgresql" {
 
 variable "spoke_network_config" {
   type = object({
-    vnetAddressSpace                  = string
-    appSvcSubnetAddressSpace          = string
-    privateEndpointSubnetAddressSpace = string
+    vnetAddressSpace                           = string
+    appSvcSubnetAddressSpace                   = string
+    appSvcSubnetDefaultOutboundAccess          = optional(bool)
+    privateEndpointSubnetAddressSpace          = string
+    privateEndpointSubnetDefaultOutboundAccess = optional(bool)
     applicationGatewayConfig = optional(object({
-      subnetAddressSpace = string
+      subnetAddressSpace    = string
+      defaultOutboundAccess = optional(bool)
     }))
     postgreSqlPrivateAccessConfig = optional(object({
-      subnetAddressSpace = string
+      subnetAddressSpace    = string
+      defaultOutboundAccess = optional(bool)
     }))
     hubPeeringConfig = optional(object({
       virtualNetworkResourceId  = string
@@ -122,15 +126,16 @@ variable "spoke_network_config" {
     egressFirewallConfig = optional(object({
       internalIp = string
     }))
-    ingressOption                = string
-    enableEgressLockdown         = bool
-    dnsServers                   = list(string)
-    ddosProtectionPlanResourceId = optional(string)
-    disableBgpRoutePropagation   = bool
-    encryption                   = bool
-    encryptionEnforcement        = string
-    flowTimeoutInMinutes         = optional(number)
-    bgpCommunity                 = optional(string)
+    ingressOption                     = string
+    enableEgressLockdown              = bool
+    dnsServers                        = list(string)
+    ddosProtectionPlanResourceId      = optional(string)
+    disableBgpRoutePropagation        = bool
+    encryption                        = bool
+    encryptionEnforcement             = string
+    flowTimeoutInMinutes              = optional(number)
+    bgpCommunity                      = optional(string)
+    enablePrivateEndpointVNetPolicies = optional(string)
     lock = optional(object({
       kind  = string
       name  = optional(string)
@@ -205,6 +210,14 @@ variable "spoke_network_config" {
       )
     )
     error_message = "spoke_network_config.egressFirewallConfig.internalIp must be provided when enableEgressLockdown is true."
+  }
+
+  validation {
+    condition = (
+      var.spoke_network_config.enablePrivateEndpointVNetPolicies == null ||
+      contains(["Basic", "Disabled"], var.spoke_network_config.enablePrivateEndpointVNetPolicies)
+    )
+    error_message = "spoke_network_config.enablePrivateEndpointVNetPolicies must be Basic, Disabled, or omitted."
   }
 }
 

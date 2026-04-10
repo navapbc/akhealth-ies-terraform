@@ -21,7 +21,8 @@ locals {
   create_private_endpoint_subnet      = var.deploy_private_networking
   create_postgresql_subnet            = var.deploy_postgresql_private_access
   create_app_gateway_subnet           = var.deploy_application_gateway_subnet
-  app_service_delegation              = var.deploy_ase_v3 ? "Microsoft.Web/hostingEnvironments" : "Microsoft.Web/serverFarms"
+  app_service_delegation_name         = var.deploy_ase_v3 ? "Microsoft.Web/hostingEnvironments" : "Microsoft.Web/serverfarms"
+  app_service_service_delegation_name = var.deploy_ase_v3 ? "Microsoft.Web/hostingEnvironments" : "Microsoft.Web/serverFarms"
   app_service_subnet_nsg_id           = var.deploy_ase_v3 ? azurerm_network_security_group.ase[0].id : azurerm_network_security_group.appsvc[0].id
   app_service_private_endpoint_policy = var.deploy_ase_v3 ? "Disabled" : "Enabled"
   nsg_diagnostic_targets = merge(
@@ -177,14 +178,15 @@ resource "azurerm_network_security_group" "app_gateway" {
 }
 
 resource "azurerm_virtual_network" "this" {
-  name                    = local.names.vnet_spoke
-  location                = var.location
-  resource_group_name     = var.resource_group_name
-  address_space           = [var.vnet_spoke_address_space]
-  dns_servers             = var.dns_servers
-  flow_timeout_in_minutes = var.flow_timeout_in_minutes
-  bgp_community           = var.virtual_network_bgp_community
-  tags                    = var.tags
+  name                           = local.names.vnet_spoke
+  location                       = var.location
+  resource_group_name            = var.resource_group_name
+  address_space                  = [var.vnet_spoke_address_space]
+  dns_servers                    = var.dns_servers
+  flow_timeout_in_minutes        = var.flow_timeout_in_minutes
+  bgp_community                  = var.virtual_network_bgp_community
+  private_endpoint_vnet_policies = var.private_endpoint_vnet_policies
+  tags                           = var.tags
 
   dynamic "ddos_protection_plan" {
     for_each = var.ddos_protection_plan_resource_id == null ? [] : [var.ddos_protection_plan_resource_id]
@@ -207,13 +209,14 @@ resource "azurerm_subnet" "app_service" {
   resource_group_name               = var.resource_group_name
   virtual_network_name              = azurerm_virtual_network.this.name
   address_prefixes                  = [var.subnet_spoke_appsvc_address_space]
+  default_outbound_access_enabled   = var.app_service_subnet_default_outbound_access
   private_endpoint_network_policies = local.app_service_private_endpoint_policy
 
   delegation {
-    name = "app-service-delegation"
+    name = local.app_service_delegation_name
 
     service_delegation {
-      name    = local.app_service_delegation
+      name    = local.app_service_service_delegation_name
       actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
     }
   }
@@ -226,6 +229,7 @@ resource "azurerm_subnet" "private_endpoint" {
   resource_group_name               = var.resource_group_name
   virtual_network_name              = azurerm_virtual_network.this.name
   address_prefixes                  = [var.subnet_spoke_private_endpoint_address_space]
+  default_outbound_access_enabled   = var.private_endpoint_subnet_default_outbound_access
   private_endpoint_network_policies = "Disabled"
 }
 
@@ -236,10 +240,11 @@ resource "azurerm_subnet" "postgresql" {
   resource_group_name               = var.resource_group_name
   virtual_network_name              = azurerm_virtual_network.this.name
   address_prefixes                  = [var.postgresql_private_access_config.subnetAddressSpace]
-  private_endpoint_network_policies = "Enabled"
+  default_outbound_access_enabled   = try(var.postgresql_private_access_config.defaultOutboundAccess, null)
+  private_endpoint_network_policies = "Disabled"
 
   delegation {
-    name = "postgresql-flexible-server"
+    name = "Microsoft.DBforPostgreSQL/flexibleServers"
 
     service_delegation {
       name    = "Microsoft.DBforPostgreSQL/flexibleServers"
@@ -251,10 +256,11 @@ resource "azurerm_subnet" "postgresql" {
 resource "azurerm_subnet" "app_gateway" {
   count = local.create_app_gateway_subnet ? 1 : 0
 
-  name                 = local.names.snet_appgw
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.this.name
-  address_prefixes     = [var.application_gateway_config.subnetAddressSpace]
+  name                            = local.names.snet_appgw
+  resource_group_name             = var.resource_group_name
+  virtual_network_name            = azurerm_virtual_network.this.name
+  address_prefixes                = [var.application_gateway_config.subnetAddressSpace]
+  default_outbound_access_enabled = try(var.application_gateway_config.defaultOutboundAccess, null)
 }
 
 resource "azurerm_subnet_network_security_group_association" "app_service" {

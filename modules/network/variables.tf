@@ -56,6 +56,11 @@ variable "deploy_private_networking" {
   type = bool
 }
 
+variable "app_service_subnet_default_outbound_access" {
+  type    = bool
+  default = null
+}
+
 variable "vnet_spoke_address_space" {
   type = string
 }
@@ -68,9 +73,15 @@ variable "subnet_spoke_private_endpoint_address_space" {
   type = string
 }
 
+variable "private_endpoint_subnet_default_outbound_access" {
+  type    = bool
+  default = null
+}
+
 variable "application_gateway_config" {
   type = object({
-    subnetAddressSpace = string
+    subnetAddressSpace    = string
+    defaultOutboundAccess = optional(bool)
   })
   default = null
 }
@@ -81,7 +92,8 @@ variable "deploy_application_gateway_subnet" {
 
 variable "postgresql_private_access_config" {
   type = object({
-    subnetAddressSpace = string
+    subnetAddressSpace    = string
+    defaultOutboundAccess = optional(bool)
   })
   default = null
 }
@@ -240,4 +252,17 @@ variable "flow_timeout_in_minutes" {
 variable "virtual_network_bgp_community" {
   type    = string
   default = null
+}
+
+variable "private_endpoint_vnet_policies" {
+  type    = string
+  default = null
+
+  validation {
+    condition = (
+      var.private_endpoint_vnet_policies == null ||
+      contains(["Basic", "Disabled"], var.private_endpoint_vnet_policies)
+    )
+    error_message = "private_endpoint_vnet_policies must be Basic, Disabled, or null."
+  }
 }

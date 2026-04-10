@@ -25,7 +25,8 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
   resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.this[0].name
   virtual_network_id    = each.value.virtualNetworkResourceId
-    registration_enabled  = coalesce(each.value.registrationEnabled, false)
+  registration_enabled  = coalesce(each.value.registrationEnabled, false)
+  resolution_policy     = each.value.resolutionPolicy
 }
 
 resource "azurerm_postgresql_flexible_server" "this" {
