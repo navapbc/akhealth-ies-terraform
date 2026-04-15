@@ -15,6 +15,8 @@ locals {
   region_abbreviation           = local.region_abbreviations[var.location]
   workload_segment              = var.workload_description == null ? "" : "-${var.workload_description}"
   name                          = substr("app-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 60)
+  private_endpoint_rg_name      = coalesce(var.private_endpoint_resource_group_name, var.resource_group_name)
+  private_dns_zone_rg_name      = coalesce(var.private_dns_zone_resource_group_name, var.resource_group_name)
   is_function_app               = contains(["windowsFunctionApp", "linuxFunctionApp"], var.workload_mode)
   is_linux                      = contains(["linuxWebApp", "linuxFunctionApp"], var.workload_mode)
   create_private_endpoint       = var.enable_default_private_endpoint
@@ -32,7 +34,7 @@ resource "azurerm_private_dns_zone" "default" {
   count = local.create_private_endpoint ? 1 : 0
 
   name                = var.default_private_dns_zone_name
-  resource_group_name = var.resource_group_name
+  resource_group_name = local.private_dns_zone_rg_name
   tags                = var.tags
 }
 
@@ -43,7 +45,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "default" {
   } : {}
 
   name                  = each.value.name
-  resource_group_name   = var.resource_group_name
+  resource_group_name   = local.private_dns_zone_rg_name
   private_dns_zone_name = azurerm_private_dns_zone.default[0].name
   virtual_network_id    = each.value.virtualNetworkResourceId
   registration_enabled  = each.value.registrationEnabled == null ? false : each.value.registrationEnabled
@@ -233,7 +235,7 @@ resource "azurerm_private_endpoint" "default" {
 
   name                = "pep-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}-appservice-${var.instance_number}"
   location            = var.location
-  resource_group_name = var.resource_group_name
+  resource_group_name = local.private_endpoint_rg_name
   subnet_id           = var.default_private_endpoint_subnet_resource_id
   tags                = var.tags
 

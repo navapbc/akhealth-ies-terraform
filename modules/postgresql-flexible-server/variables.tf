@@ -135,6 +135,11 @@ variable "delegated_subnet_resource_id" {
   default = null
 }
 
+variable "private_dns_zone_resource_group_name" {
+  type    = string
+  default = null
+}
+
 variable "private_dns_zone_virtual_network_links" {
   type = list(object({
     name                     = string

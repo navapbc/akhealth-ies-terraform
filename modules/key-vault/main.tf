@@ -4,13 +4,15 @@ locals {
   workload_segment        = var.workload_description == null ? "" : "-${var.workload_description}"
   name                    = substr("kv-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 24)
   create_private_endpoint = var.enable_default_private_endpoint
+  private_endpoint_rg_name = coalesce(var.private_endpoint_resource_group_name, var.resource_group_name)
+  private_dns_zone_rg_name = coalesce(var.private_dns_zone_resource_group_name, var.resource_group_name)
 }
 
 resource "azurerm_private_dns_zone" "default" {
   count = local.create_private_endpoint ? 1 : 0
 
   name                = var.default_private_dns_zone_name
-  resource_group_name = var.resource_group_name
+  resource_group_name = local.private_dns_zone_rg_name
   tags                = var.tags
 }
 
@@ -21,7 +23,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "default" {
   } : {}
 
   name                  = each.value.name
-  resource_group_name   = var.resource_group_name
+  resource_group_name   = local.private_dns_zone_rg_name
   private_dns_zone_name = azurerm_private_dns_zone.default[0].name
   virtual_network_id    = each.value.virtualNetworkResourceId
   registration_enabled  = coalesce(each.value.registrationEnabled, false)
@@ -91,7 +93,7 @@ resource "azurerm_private_endpoint" "default" {
 
   name                = "pep-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-keyvault-${var.instance_number}"
   location            = var.location
-  resource_group_name = var.resource_group_name
+  resource_group_name = local.private_endpoint_rg_name
   subnet_id           = var.default_private_endpoint_subnet_resource_id
   tags                = var.tags
 

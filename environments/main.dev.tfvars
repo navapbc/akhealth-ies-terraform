@@ -1,9 +1,9 @@
-workload_name             = "878RVZ"
-location                  = "eastus2"
+workload_name             = "845FDA"
+location                  = "westus2"
 environment_name          = "dev"
 system_abbreviation       = "iep"
 environment_abbreviation  = "dev"
-instance_number           = "002"
+instance_number           = "004"
 workload_description      = null
 existing_log_analytics_id = null
 
@@ -15,6 +15,30 @@ tags = {
   workload    = "456TRF"
   managedBy   = "terraform"
 }
+
+resource_group_definitions = [
+  {
+    key                 = "network"
+    workloadDescription = "network"
+  },
+  {
+    key                    = "networkEdge"
+    workloadDescription    = "network"
+    subWorkloadDescription = "edge"
+  },
+  {
+    key                 = "hosting"
+    workloadDescription = "hosting"
+  },
+  {
+    key                 = "data"
+    workloadDescription = "data"
+  },
+  {
+    key                 = "operations"
+    workloadDescription = "operations"
+  }
+]
 
 spoke_network_config = {
   ingressOption                     = "frontDoor"
@@ -149,8 +173,8 @@ app_gateway_config = {
   managedIdentities = {
     systemAssigned = false
   }
-  enableHttp2 = true
-  enableFips  = false
+  enableHttp2                   = true
+  enableFips                    = false
   gatewayIPConfigurations       = []
   frontendIPConfigurations      = []
   frontendPorts                 = []

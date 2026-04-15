@@ -17,14 +17,28 @@ locals {
   normalized_workload_description = var.workload_description == null ? null : (
     trimspace(var.workload_description) == "" ? null : trimspace(var.workload_description)
   )
-  region_abbreviation = local.region_abbreviations[var.location]
   workload_segment    = local.normalized_workload_description == null ? "" : "-${local.normalized_workload_description}"
+  region_abbreviation = local.region_abbreviations[var.location]
 
-  resource_group_name = substr(
-    "rg-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}",
-    0,
-    90
-  )
+  resource_group_definitions_by_key = {
+    for definition in var.resource_group_definitions :
+    definition.key => {
+      workload_description = trimspace(definition.workloadDescription)
+      sub_workload_description = (
+        definition.subWorkloadDescription == null ||
+        trimspace(definition.subWorkloadDescription) == ""
+      ) ? null : trimspace(definition.subWorkloadDescription)
+    }
+  }
+
+  resource_group_name_map = {
+    for key, definition in local.resource_group_definitions_by_key :
+    key => substr(
+      "rg-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}-${definition.workload_description}${definition.sub_workload_description == null ? "" : "-${definition.sub_workload_description}"}-${var.instance_number}",
+      0,
+      90
+    )
+  }
 
   private_networking_enabled            = var.deploy_private_networking && trimspace(var.spoke_network_config.privateEndpointSubnetAddressSpace) != ""
   web_app_private_networking_enabled    = local.private_networking_enabled && !var.deploy_ase_v3
@@ -35,6 +49,8 @@ locals {
   deploy_app_service_plan               = !local.use_existing_app_service_plan
   use_front_door_ingress                = var.spoke_network_config.ingressOption == "frontDoor"
   use_application_gateway_ingress       = var.spoke_network_config.ingressOption == "applicationGateway"
+  spoke_vnet_name                       = substr("vnet-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 80)
+  spoke_vnet_resource_id                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${local.resource_group_name_map.network}/providers/Microsoft.Network/virtualNetworks/${local.spoke_vnet_name}"
   resolved_log_analytics_workspace_id   = var.existing_log_analytics_id != null ? var.existing_log_analytics_id : module.log_analytics_workspace[0].resource_id
   resolved_app_service_plan_resource_id = local.use_existing_app_service_plan ? var.service_plan_config.existingPlanId : module.app_service_plan[0].resource_id
   postgresql_role_assignments = concat(var.postgresql_config.roleAssignments, var.postgresql_config.grantAppServiceIdentityReaderRole ? [{
@@ -46,8 +62,8 @@ locals {
   }] : [])
   spoke_private_dns_zone_links = [
     {
-      name                     = module.network.vnet_spoke_name
-      virtualNetworkResourceId = module.network.vnet_spoke_resource_id
+      name                     = local.spoke_vnet_name
+      virtualNetworkResourceId = local.spoke_vnet_resource_id
       registrationEnabled      = false
     }
   ]

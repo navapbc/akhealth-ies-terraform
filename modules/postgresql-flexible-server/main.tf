@@ -3,6 +3,7 @@ locals {
   private_access_enabled = var.private_access_mode == "delegatedSubnet"
   private_dns_zone_label = substr("pdz-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-${var.workload_description}-${var.instance_number}", 0, 63)
   private_dns_zone_name  = "${local.private_dns_zone_label}.postgres.database.azure.com"
+  private_dns_zone_rg_name = coalesce(var.private_dns_zone_resource_group_name, var.resource_group_name)
   storage_mb             = var.storage_size_gb * 1024
   public_network_access  = var.public_network_access == "Enabled"
 }
@@ -11,7 +12,7 @@ resource "azurerm_private_dns_zone" "this" {
   count = local.private_access_enabled ? 1 : 0
 
   name                = local.private_dns_zone_name
-  resource_group_name = var.resource_group_name
+  resource_group_name = local.private_dns_zone_rg_name
   tags                = var.tags
 }
 
@@ -22,7 +23,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
   } : {}
 
   name                  = each.value.name
-  resource_group_name   = var.resource_group_name
+  resource_group_name   = local.private_dns_zone_rg_name
   private_dns_zone_name = azurerm_private_dns_zone.this[0].name
   virtual_network_id    = each.value.virtualNetworkResourceId
   registration_enabled  = coalesce(each.value.registrationEnabled, false)

@@ -151,9 +151,19 @@ variable "default_private_endpoint_subnet_resource_id" {
   default = null
 }
 
+variable "private_endpoint_resource_group_name" {
+  type    = string
+  default = null
+}
+
 variable "default_private_dns_zone_name" {
   type    = string
   default = "privatelink.azurewebsites.net"
+}
+
+variable "private_dns_zone_resource_group_name" {
+  type    = string
+  default = null
 }
 
 variable "default_private_dns_zone_virtual_network_links" {

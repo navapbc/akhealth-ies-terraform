@@ -1,5 +1,29 @@
 output "spoke_resource_group_name" {
-  value = azurerm_resource_group.spoke.name
+  value = azurerm_resource_group.solution["network"].name
+}
+
+output "resource_group_name_map" {
+  value = local.resource_group_name_map
+}
+
+output "network_resource_group_name" {
+  value = azurerm_resource_group.solution["network"].name
+}
+
+output "network_edge_resource_group_name" {
+  value = azurerm_resource_group.solution["networkEdge"].name
+}
+
+output "hosting_resource_group_name" {
+  value = azurerm_resource_group.solution["hosting"].name
+}
+
+output "data_resource_group_name" {
+  value = azurerm_resource_group.solution["data"].name
+}
+
+output "operations_resource_group_name" {
+  value = azurerm_resource_group.solution["operations"].name
 }
 
 output "spoke_vnet_resource_id" {
