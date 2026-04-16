@@ -1,0 +1,42 @@
+Comparison basis:
+- Terraform: saved binary plan plus terraform show -json
+- Bicep: compiled ARM JSON plus machine-readable subscription what-if JSON
+
+Important limitation:
+- Terraform/AzureRM does not expose a first-class "generated ARM JSON template" artifact the way Bicep does.
+- The closest comparable artifact on the Terraform side is the machine-readable plan JSON.
+
+Observed comparison:
+- Core deployment shape is aligned at 45 planned creates on both sides.
+- Type coverage matches for the main resource set:
+  - Microsoft.Resources/resourceGroups x5
+  - Microsoft.Resources/deploymentScripts x1
+  - Microsoft.ManagedIdentity/userAssignedIdentities x1
+  - Microsoft.Cdn/* Front Door resources x6 total
+  - Microsoft.Network/FrontDoorWebApplicationFirewallPolicies x1
+  - Microsoft.Web/serverfarms x1
+  - Microsoft.Web/sites x1
+  - Microsoft.DBforPostgreSQL/flexibleServers family x3 plus role assignment
+  - Microsoft.Network/privateDnsZones x3 and virtualNetworkLinks x3
+  - Microsoft.Network/privateEndpoints x2
+  - Microsoft.Network/networkSecurityGroups x3
+  - Microsoft.Network/virtualNetworks x1 and subnets x3
+  - Microsoft.Insights/components x1
+  - Microsoft.Insights/diagnosticSettings x3
+  - Microsoft.KeyVault/vaults x1
+  - Microsoft.OperationalInsights/workspaces x1
+
+Known modeling differences:
+- Terraform models subnet-to-NSG attachment as 3 separate azurerm_subnet_network_security_group_association resources.
+- Bicep folds that association into the subnet resource shape, so there is no separate ARM child resource for those 3 items.
+- Bicep surfaces 2 Microsoft.Web/sites/basicPublishingCredentialsPolicies child resources (ftp, scm).
+- Terraform models those as properties on the web app resource, not as separate resources.
+- Bicep surfaces 2 Microsoft.Network/privateEndpoints/privateDnsZoneGroups child resources.
+- Terraform models those as inline blocks on the private endpoint resources, not as separate resources.
+
+Role assignment note:
+- Terraform inventory shows 2 Microsoft.Authorization/roleAssignments creates:
+  - PostgreSQL app-service reader assignment
+  - AFD private-endpoint auto-approver contributor assignment
+- Bicep what-if shows 1 create and 1 unsupported role assignment item.
+- The unsupported item is the hosting-scope AFD auto-approver role assignment whose ID depends on deployment-time identity resolution.

@@ -1,0 +1,963 @@
+Acquiring state lock. This may take a few moments...
+module.key_vault.data.azurerm_client_config.current: Reading...
+data.azurerm_client_config.current: Reading...
+module.key_vault.data.azurerm_client_config.current: Read complete after 0s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9ZWE5Nzg5ZWUtZTEzNi00MzZjLWIzM2YtMTc0YWM2ZGY3NzMzO3N1YnNjcmlwdGlvbklkPWRlYzljMzMxLWQ3NzMtNGY3Ny1hNWE4LTM5ZTk1Njk5YzRhNTt0ZW5hbnRJZD1iYTA2NjQ1Zi1lMGNjLTQ0YjUtODk3Zi0zNGViNmFhNTk1ODg=]
+data.azurerm_client_config.current: Read complete after 0s [id=Y2xpZW50Q29uZmlncy9jbGllbnRJZD0wNGIwNzc5NS04ZGRiLTQ2MWEtYmJlZS0wMmY5ZTFiZjdiNDY7b2JqZWN0SWQ9ZWE5Nzg5ZWUtZTEzNi00MzZjLWIzM2YtMTc0YWM2ZGY3NzMzO3N1YnNjcmlwdGlvbklkPWRlYzljMzMxLWQ3NzMtNGY3Ny1hNWE4LTM5ZTk1Njk5YzRhNTt0ZW5hbnRJZD1iYTA2NjQ1Zi1lMGNjLTQ0YjUtODk3Zi0zNGViNmFhNTk1ODg=]
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  + create
+
+Terraform will perform the following actions:
+
+  # azurerm_resource_deployment_script_azure_cli.afd_private_endpoint_auto_approval[0] will be created
+  + resource "azurerm_resource_deployment_script_azure_cli" "afd_private_endpoint_auto_approval" {
+      + cleanup_preference  = "OnSuccess"
+      + force_update_tag    = (known after apply)
+      + id                  = (known after apply)
+      + location            = "westus2"
+      + name                = "script-iep-wus2-dev-afdapproval-005"
+      + outputs             = (known after apply)
+      + resource_group_name = "rg-iep-wus2-dev-operations-005"
+      + retention_interval  = "P1D"
+      + script_content      = <<-EOT
+            rg_name="$ResourceGroupName"; webapp_ids=$(az webapp list -g $rg_name --query "[].id" -o tsv); for webapp_id in $webapp_ids; do fd_conn_ids=$(az network private-endpoint-connection list --id $webapp_id --query "[?properties.provisioningState == 'Pending'].id" -o tsv); for fd_conn_id in $fd_conn_ids; do az network private-endpoint-connection approve --id "$fd_conn_id" --description "ApprovedByCli"; done; done
+        EOT
+      + tags                = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+      + timeout             = "PT30M"
+      + version             = "2.67.0"
+
+      + environment_variable {
+          # At least one attribute in this block is (or was) sensitive,
+          # so its contents will not be displayed.
+        }
+
+      + identity {
+          + identity_ids = (known after apply)
+          + type         = "UserAssigned"
+        }
+    }
+
+  # azurerm_resource_group.resourceGroups["data"] will be created
+  + resource "azurerm_resource_group" "resourceGroups" {
+      + id       = (known after apply)
+      + location = "westus2"
+      + name     = "rg-iep-wus2-dev-data-005"
+      + tags     = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+    }
+
+  # azurerm_resource_group.resourceGroups["hosting"] will be created
+  + resource "azurerm_resource_group" "resourceGroups" {
+      + id       = (known after apply)
+      + location = "westus2"
+      + name     = "rg-iep-wus2-dev-hosting-005"
+      + tags     = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+    }
+
+  # azurerm_resource_group.resourceGroups["network"] will be created
+  + resource "azurerm_resource_group" "resourceGroups" {
+      + id       = (known after apply)
+      + location = "westus2"
+      + name     = "rg-iep-wus2-dev-network-005"
+      + tags     = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+    }
+
+  # azurerm_resource_group.resourceGroups["networkEdge"] will be created
+  + resource "azurerm_resource_group" "resourceGroups" {
+      + id       = (known after apply)
+      + location = "westus2"
+      + name     = "rg-iep-wus2-dev-network-edge-005"
+      + tags     = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+    }
+
+  # azurerm_resource_group.resourceGroups["operations"] will be created
+  + resource "azurerm_resource_group" "resourceGroups" {
+      + id       = (known after apply)
+      + location = "westus2"
+      + name     = "rg-iep-wus2-dev-operations-005"
+      + tags     = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+    }
+
+  # azurerm_role_assignment.afd_private_endpoint_approver_contributor[0] will be created
+  + resource "azurerm_role_assignment" "afd_private_endpoint_approver_contributor" {
+      + condition_version                = (known after apply)
+      + id                               = (known after apply)
+      + name                             = (known after apply)
+      + principal_id                     = (known after apply)
+      + principal_type                   = "ServicePrincipal"
+      + role_definition_id               = (known after apply)
+      + role_definition_name             = "Contributor"
+      + scope                            = (known after apply)
+      + skip_service_principal_aad_check = (known after apply)
+    }
+
+  # azurerm_user_assigned_identity.afd_private_endpoint_approver[0] will be created
+  + resource "azurerm_user_assigned_identity" "afd_private_endpoint_approver" {
+      + client_id           = (known after apply)
+      + id                  = (known after apply)
+      + isolation_scope     = "Regional"
+      + location            = "westus2"
+      + name                = "id-iep-wus2-dev-afdprivateendpointapprover-005"
+      + principal_id        = (known after apply)
+      + resource_group_name = "rg-iep-wus2-dev-operations-005"
+      + tags                = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+      + tenant_id           = (known after apply)
+    }
+
+  # module.app_insights.azurerm_application_insights.this will be created
+  + resource "azurerm_application_insights" "this" {
+      + app_id                              = (known after apply)
+      + application_type                    = "web"
+      + connection_string                   = (sensitive value)
+      + daily_data_cap_in_gb                = 100
+      + disable_ip_masking                  = true
+      + force_customer_storage_for_profiler = false
+      + id                                  = (known after apply)
+      + instrumentation_key                 = (sensitive value)
+      + internet_ingestion_enabled          = true
+      + internet_query_enabled              = true
+      + local_authentication_disabled       = true
+      + location                            = "westus2"
+      + name                                = "appi-iep-wus2-dev-005"
+      + resource_group_name                 = "rg-iep-wus2-dev-operations-005"
+      + retention_in_days                   = 90
+      + sampling_percentage                 = 100
+      + tags                                = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+      + workspace_id                        = (known after apply)
+    }
+
+  # module.app_service_plan[0].azurerm_service_plan.this will be created
+  + resource "azurerm_service_plan" "this" {
+      + id                              = (known after apply)
+      + kind                            = (known after apply)
+      + location                        = "westus2"
+      + maximum_elastic_worker_count    = 1
+      + name                            = "asp-iep-wus2-dev-005"
+      + os_type                         = "Windows"
+      + per_site_scaling_enabled        = false
+      + premium_plan_auto_scale_enabled = false
+      + reserved                        = (known after apply)
+      + resource_group_name             = "rg-iep-wus2-dev-hosting-005"
+      + sku_name                        = "B1"
+      + tags                            = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+      + worker_count                    = 1
+      + zone_balancing_enabled          = false
+    }
+
+  # module.front_door[0].azurerm_cdn_frontdoor_endpoint.this["default"] will be created
+  + resource "azurerm_cdn_frontdoor_endpoint" "this" {
+      + cdn_frontdoor_profile_id = (known after apply)
+      + enabled                  = true
+      + host_name                = (known after apply)
+      + id                       = (known after apply)
+      + name                     = "fde-iep-global-dev-default-005"
+      + tags                     = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+    }
+
+  # module.front_door[0].azurerm_cdn_frontdoor_origin.this["app-default/app-default"] will be created
+  + resource "azurerm_cdn_frontdoor_origin" "this" {
+      + cdn_frontdoor_origin_group_id  = (known after apply)
+      + certificate_name_check_enabled = true
+      + enabled                        = true
+      + host_name                      = (known after apply)
+      + http_port                      = 80
+      + https_port                     = 443
+      + id                             = (known after apply)
+      + name                           = "app-default"
+      + origin_host_header             = (known after apply)
+      + priority                       = 1
+      + weight                         = 1000
+
+      + private_link {
+          + location               = "westus2"
+          + private_link_target_id = (known after apply)
+          + request_message        = "frontdoor"
+          + target_type            = "sites"
+        }
+    }
+
+  # module.front_door[0].azurerm_cdn_frontdoor_origin_group.this["app-default"] will be created
+  + resource "azurerm_cdn_frontdoor_origin_group" "this" {
+      + cdn_frontdoor_profile_id                                  = (known after apply)
+      + id                                                        = (known after apply)
+      + name                                                      = "app-default"
+      + restore_traffic_time_to_healed_or_new_endpoint_in_minutes = 10
+      + session_affinity_enabled                                  = false
+
+      + health_probe {
+          + interval_in_seconds = 100
+          + path                = "/"
+          + protocol            = "Https"
+          + request_type        = "GET"
+        }
+
+      + load_balancing {
+          + additional_latency_in_milliseconds = 50
+          + sample_size                        = 4
+          + successful_samples_required        = 3
+        }
+    }
+
+  # module.front_door[0].azurerm_cdn_frontdoor_profile.this will be created
+  + resource "azurerm_cdn_frontdoor_profile" "this" {
+      + id                       = (known after apply)
+      + name                     = "afd-iep-global-dev-005"
+      + resource_group_name      = "rg-iep-wus2-dev-network-edge-005"
+      + resource_guid            = (known after apply)
+      + response_timeout_seconds = 120
+      + sku_name                 = "Premium_AzureFrontDoor"
+      + tags                     = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+
+      + identity {
+          + principal_id = (known after apply)
+          + tenant_id    = (known after apply)
+          + type         = "SystemAssigned"
+        }
+    }
+
+  # module.front_door[0].azurerm_cdn_frontdoor_route.this["default/default"] will be created
+  + resource "azurerm_cdn_frontdoor_route" "this" {
+      + cdn_frontdoor_endpoint_id     = (known after apply)
+      + cdn_frontdoor_origin_group_id = (known after apply)
+      + cdn_frontdoor_origin_ids      = (known after apply)
+      + enabled                       = true
+      + forwarding_protocol           = "HttpsOnly"
+      + https_redirect_enabled        = true
+      + id                            = (known after apply)
+      + link_to_default_domain        = true
+      + name                          = "default"
+      + patterns_to_match             = [
+          + "/*",
+        ]
+      + supported_protocols           = [
+          + "Http",
+          + "Https",
+        ]
+    }
+
+  # module.front_door_security_policy[0].azurerm_cdn_frontdoor_security_policy.this will be created
+  + resource "azurerm_cdn_frontdoor_security_policy" "this" {
+      + cdn_frontdoor_profile_id = (known after apply)
+      + id                       = (known after apply)
+      + name                     = "fdsecp-iep-wus2-dev-005"
+
+      + security_policies {
+          + firewall {
+              + cdn_frontdoor_firewall_policy_id = (known after apply)
+
+              + association {
+                  + patterns_to_match = [
+                      + "/*",
+                    ]
+
+                  + domain {
+                      + active                  = (known after apply)
+                      + cdn_frontdoor_domain_id = (known after apply)
+                    }
+                }
+            }
+        }
+    }
+
+  # module.front_door_waf_policy[0].azurerm_cdn_frontdoor_firewall_policy.this will be created
+  + resource "azurerm_cdn_frontdoor_firewall_policy" "this" {
+      + captcha_cookie_expiration_in_minutes      = 30
+      + enabled                                   = true
+      + frontend_endpoint_ids                     = (known after apply)
+      + id                                        = (known after apply)
+      + js_challenge_cookie_expiration_in_minutes = 30
+      + mode                                      = "Prevention"
+      + name                                      = "fdfpiepglobaldev005"
+      + request_body_check_enabled                = true
+      + resource_group_name                       = "rg-iep-wus2-dev-network-edge-005"
+      + sku_name                                  = "Premium_AzureFrontDoor"
+      + tags                                      = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+
+      + custom_rule {
+          + action                         = "Block"
+          + enabled                        = true
+          + name                           = "BlockMethod"
+          + priority                       = 10
+          + rate_limit_duration_in_minutes = 1
+          + rate_limit_threshold           = 100
+          + type                           = "MatchRule"
+
+          + match_condition {
+              + match_values       = [
+                  + "GET",
+                  + "OPTIONS",
+                  + "HEAD",
+                ]
+              + match_variable     = "RequestMethod"
+              + negation_condition = true
+              + operator           = "Equal"
+            }
+        }
+
+      + managed_rule {
+          + action  = "Block"
+          + type    = "Microsoft_DefaultRuleSet"
+          + version = "2.1"
+        }
+      + managed_rule {
+          + action  = "Block"
+          + type    = "Microsoft_BotManagerRuleSet"
+          + version = "1.0"
+        }
+    }
+
+  # module.key_vault.azurerm_key_vault.this will be created
+  + resource "azurerm_key_vault" "this" {
+      + access_policy                   = (known after apply)
+      + enable_rbac_authorization       = (known after apply)
+      + enabled_for_deployment          = true
+      + enabled_for_disk_encryption     = true
+      + enabled_for_template_deployment = true
+      + id                              = (known after apply)
+      + location                        = "westus2"
+      + name                            = "kv-iep-wus2-dev-005"
+      + public_network_access_enabled   = false
+      + purge_protection_enabled        = false
+      + rbac_authorization_enabled      = true
+      + resource_group_name             = "rg-iep-wus2-dev-operations-005"
+      + sku_name                        = "standard"
+      + soft_delete_retention_days      = 90
+      + tags                            = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+      + tenant_id                       = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
+      + vault_uri                       = (known after apply)
+
+      + contact (known after apply)
+
+      + network_acls {
+          + bypass         = "AzureServices"
+          + default_action = "Deny"
+        }
+    }
+
+  # module.key_vault.azurerm_private_dns_zone.default[0] will be created
+  + resource "azurerm_private_dns_zone" "default" {
+      + id                                                    = (known after apply)
+      + max_number_of_record_sets                             = (known after apply)
+      + max_number_of_virtual_network_links                   = (known after apply)
+      + max_number_of_virtual_network_links_with_registration = (known after apply)
+      + name                                                  = "privatelink.vaultcore.azure.net"
+      + number_of_record_sets                                 = (known after apply)
+      + resource_group_name                                   = "rg-iep-wus2-dev-network-005"
+      + tags                                                  = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+
+      + soa_record (known after apply)
+    }
+
+  # module.key_vault.azurerm_private_dns_zone_virtual_network_link.default["vnet-iep-wus2-dev-005"] will be created
+  + resource "azurerm_private_dns_zone_virtual_network_link" "default" {
+      + id                    = (known after apply)
+      + name                  = "vnet-iep-wus2-dev-005"
+      + private_dns_zone_name = "privatelink.vaultcore.azure.net"
+      + registration_enabled  = false
+      + resolution_policy     = (known after apply)
+      + resource_group_name   = "rg-iep-wus2-dev-network-005"
+      + virtual_network_id    = "/subscriptions/dec9c331-d773-4f77-a5a8-39e95699c4a5/resourceGroups/rg-iep-wus2-dev-network-005/providers/Microsoft.Network/virtualNetworks/vnet-iep-wus2-dev-005"
+    }
+
+  # module.key_vault.azurerm_private_endpoint.default[0] will be created
+  + resource "azurerm_private_endpoint" "default" {
+      + custom_dns_configs       = (known after apply)
+      + id                       = (known after apply)
+      + location                 = "westus2"
+      + name                     = "pep-iep-wus2-dev-keyvault-005"
+      + network_interface        = (known after apply)
+      + private_dns_zone_configs = (known after apply)
+      + resource_group_name      = "rg-iep-wus2-dev-network-005"
+      + subnet_id                = (known after apply)
+      + tags                     = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+
+      + private_dns_zone_group {
+          + id                   = (known after apply)
+          + name                 = "kv-iep-wus2-dev-005"
+          + private_dns_zone_ids = (known after apply)
+        }
+
+      + private_service_connection {
+          + is_manual_connection           = false
+          + name                           = "plsc-iep-wus2-dev-keyvault-005"
+          + private_connection_resource_id = (known after apply)
+          + private_ip_address             = (known after apply)
+          + subresource_names              = [
+              + "vault",
+            ]
+        }
+    }
+
+  # module.log_analytics_workspace[0].azurerm_log_analytics_workspace.this will be created
+  + resource "azurerm_log_analytics_workspace" "this" {
+      + allow_resource_only_permissions = false
+      + daily_quota_gb                  = -1
+      + id                              = (known after apply)
+      + internet_ingestion_enabled      = true
+      + internet_query_enabled          = true
+      + local_authentication_disabled   = (known after apply)
+      + local_authentication_enabled    = false
+      + location                        = "westus2"
+      + name                            = "log-iep-wus2-dev-005"
+      + primary_shared_key              = (sensitive value)
+      + resource_group_name             = "rg-iep-wus2-dev-operations-005"
+      + retention_in_days               = 365
+      + secondary_shared_key            = (sensitive value)
+      + sku                             = "PerGB2018"
+      + tags                            = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+      + workspace_id                    = (known after apply)
+    }
+
+  # module.network.azurerm_network_security_group.appsvc[0] will be created
+  + resource "azurerm_network_security_group" "appsvc" {
+      + id                  = (known after apply)
+      + location            = "westus2"
+      + name                = "nsg-iep-wus2-dev-appservice-005"
+      + resource_group_name = "rg-iep-wus2-dev-network-005"
+      + security_rule       = [
+          + {
+              + access                                     = "Deny"
+              + destination_address_prefix                 = "*"
+              + destination_address_prefixes               = []
+              + destination_application_security_group_ids = []
+              + destination_port_ranges                    = [
+                  + "22",
+                  + "3389",
+                ]
+              + direction                                  = "Outbound"
+              + name                                       = "deny-hop-outbound"
+              + priority                                   = 200
+              + protocol                                   = "*"
+              + source_address_prefix                      = "VirtualNetwork"
+              + source_address_prefixes                    = []
+              + source_application_security_group_ids      = []
+              + source_port_range                          = "*"
+              + source_port_ranges                         = []
+                # (2 unchanged attributes hidden)
+            },
+        ]
+      + tags                = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+    }
+
+  # module.network.azurerm_network_security_group.postgresql[0] will be created
+  + resource "azurerm_network_security_group" "postgresql" {
+      + id                  = (known after apply)
+      + location            = "westus2"
+      + name                = "nsg-iep-wus2-dev-postgresql-005"
+      + resource_group_name = "rg-iep-wus2-dev-network-005"
+      + security_rule       = (known after apply)
+      + tags                = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+    }
+
+  # module.network.azurerm_network_security_group.private_endpoint[0] will be created
+  + resource "azurerm_network_security_group" "private_endpoint" {
+      + id                  = (known after apply)
+      + location            = "westus2"
+      + name                = "nsg-iep-wus2-dev-privateendpoint-005"
+      + resource_group_name = "rg-iep-wus2-dev-network-005"
+      + security_rule       = (known after apply)
+      + tags                = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+    }
+
+  # module.network.azurerm_subnet.app_service will be created
+  + resource "azurerm_subnet" "app_service" {
+      + address_prefixes                              = [
+          + "10.240.0.0/26",
+        ]
+      + default_outbound_access_enabled               = true
+      + id                                            = (known after apply)
+      + name                                          = "snet-iep-wus2-dev-appservice-005"
+      + private_endpoint_network_policies             = "Enabled"
+      + private_link_service_network_policies_enabled = true
+      + resource_group_name                           = "rg-iep-wus2-dev-network-005"
+      + virtual_network_name                          = "vnet-iep-wus2-dev-005"
+
+      + delegation {
+          + name = "Microsoft.Web/serverfarms"
+
+          + service_delegation {
+              + actions = [
+                  + "Microsoft.Network/virtualNetworks/subnets/action",
+                ]
+              + name    = "Microsoft.Web/serverFarms"
+            }
+        }
+    }
+
+  # module.network.azurerm_subnet.postgresql[0] will be created
+  + resource "azurerm_subnet" "postgresql" {
+      + address_prefixes                              = [
+          + "10.240.10.0/28",
+        ]
+      + default_outbound_access_enabled               = true
+      + id                                            = (known after apply)
+      + name                                          = "snet-iep-wus2-dev-postgresql-005"
+      + private_endpoint_network_policies             = "Disabled"
+      + private_link_service_network_policies_enabled = true
+      + resource_group_name                           = "rg-iep-wus2-dev-network-005"
+      + virtual_network_name                          = "vnet-iep-wus2-dev-005"
+
+      + delegation {
+          + name = "Microsoft.DBforPostgreSQL/flexibleServers"
+
+          + service_delegation {
+              + actions = [
+                  + "Microsoft.Network/virtualNetworks/subnets/join/action",
+                ]
+              + name    = "Microsoft.DBforPostgreSQL/flexibleServers"
+            }
+        }
+    }
+
+  # module.network.azurerm_subnet.private_endpoint[0] will be created
+  + resource "azurerm_subnet" "private_endpoint" {
+      + address_prefixes                              = [
+          + "10.240.11.0/24",
+        ]
+      + default_outbound_access_enabled               = true
+      + id                                            = (known after apply)
+      + name                                          = "snet-iep-wus2-dev-privateendpoint-005"
+      + private_endpoint_network_policies             = "Disabled"
+      + private_link_service_network_policies_enabled = true
+      + resource_group_name                           = "rg-iep-wus2-dev-network-005"
+      + virtual_network_name                          = "vnet-iep-wus2-dev-005"
+    }
+
+  # module.network.azurerm_subnet_network_security_group_association.app_service will be created
+  + resource "azurerm_subnet_network_security_group_association" "app_service" {
+      + id                        = (known after apply)
+      + network_security_group_id = (known after apply)
+      + subnet_id                 = (known after apply)
+    }
+
+  # module.network.azurerm_subnet_network_security_group_association.postgresql[0] will be created
+  + resource "azurerm_subnet_network_security_group_association" "postgresql" {
+      + id                        = (known after apply)
+      + network_security_group_id = (known after apply)
+      + subnet_id                 = (known after apply)
+    }
+
+  # module.network.azurerm_subnet_network_security_group_association.private_endpoint[0] will be created
+  + resource "azurerm_subnet_network_security_group_association" "private_endpoint" {
+      + id                        = (known after apply)
+      + network_security_group_id = (known after apply)
+      + subnet_id                 = (known after apply)
+    }
+
+  # module.network.azurerm_virtual_network.this will be created
+  + resource "azurerm_virtual_network" "this" {
+      + address_space                  = [
+          + "10.240.0.0/20",
+        ]
+      + dns_servers                    = []
+      + guid                           = (known after apply)
+      + id                             = (known after apply)
+      + location                       = "westus2"
+      + name                           = "vnet-iep-wus2-dev-005"
+      + private_endpoint_vnet_policies = "Disabled"
+      + resource_group_name            = "rg-iep-wus2-dev-network-005"
+      + subnet                         = (known after apply)
+      + tags                           = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+    }
+
+  # module.postgresql[0].azurerm_postgresql_flexible_server.this will be created
+  + resource "azurerm_postgresql_flexible_server" "this" {
+      + administrator_login           = (known after apply)
+      + administrator_password_wo     = (write-only attribute)
+      + auto_grow_enabled             = true
+      + backup_retention_days         = 7
+      + delegated_subnet_id           = (known after apply)
+      + fqdn                          = (known after apply)
+      + geo_redundant_backup_enabled  = false
+      + id                            = (known after apply)
+      + location                      = "westus2"
+      + name                          = "psqlfx-iep-wus2-dev-postgresql-005"
+      + private_dns_zone_id           = (known after apply)
+      + public_network_access_enabled = false
+      + resource_group_name           = "rg-iep-wus2-dev-data-005"
+      + sku_name                      = "B_Standard_B1ms"
+      + storage_mb                    = 32768
+      + storage_tier                  = (known after apply)
+      + tags                          = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+      + version                       = "18"
+
+      + authentication {
+          + active_directory_auth_enabled = true
+          + password_auth_enabled         = false
+          + tenant_id                     = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
+        }
+    }
+
+  # module.postgresql[0].azurerm_postgresql_flexible_server_active_directory_administrator.this will be created
+  + resource "azurerm_postgresql_flexible_server_active_directory_administrator" "this" {
+      + id                  = (known after apply)
+      + object_id           = "b58ff011-4384-42b9-b25c-26c5dfc26b06"
+      + principal_name      = "secgrp-iep-eus2-dev-pgsqladmin-001"
+      + principal_type      = "Group"
+      + resource_group_name = "rg-iep-wus2-dev-data-005"
+      + server_name         = "psqlfx-iep-wus2-dev-postgresql-005"
+      + tenant_id           = "ba06645f-e0cc-44b5-897f-34eb6aa59588"
+    }
+
+  # module.postgresql[0].azurerm_postgresql_flexible_server_database.this["appdb"] will be created
+  + resource "azurerm_postgresql_flexible_server_database" "this" {
+      + charset   = "UTF8"
+      + collation = "en_US.utf8"
+      + id        = (known after apply)
+      + name      = "appdb"
+      + server_id = (known after apply)
+    }
+
+  # module.postgresql[0].azurerm_private_dns_zone.this[0] will be created
+  + resource "azurerm_private_dns_zone" "this" {
+      + id                                                    = (known after apply)
+      + max_number_of_record_sets                             = (known after apply)
+      + max_number_of_virtual_network_links                   = (known after apply)
+      + max_number_of_virtual_network_links_with_registration = (known after apply)
+      + name                                                  = "pdz-iep-wus2-dev-postgresql-005.postgres.database.azure.com"
+      + number_of_record_sets                                 = (known after apply)
+      + resource_group_name                                   = "rg-iep-wus2-dev-network-005"
+      + tags                                                  = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+
+      + soa_record (known after apply)
+    }
+
+  # module.postgresql[0].azurerm_private_dns_zone_virtual_network_link.this["vnet-iep-wus2-dev-005"] will be created
+  + resource "azurerm_private_dns_zone_virtual_network_link" "this" {
+      + id                    = (known after apply)
+      + name                  = "vnet-iep-wus2-dev-005"
+      + private_dns_zone_name = "pdz-iep-wus2-dev-postgresql-005.postgres.database.azure.com"
+      + registration_enabled  = false
+      + resolution_policy     = (known after apply)
+      + resource_group_name   = "rg-iep-wus2-dev-network-005"
+      + virtual_network_id    = "/subscriptions/dec9c331-d773-4f77-a5a8-39e95699c4a5/resourceGroups/rg-iep-wus2-dev-network-005/providers/Microsoft.Network/virtualNetworks/vnet-iep-wus2-dev-005"
+    }
+
+  # module.web_app.azurerm_private_dns_zone.default[0] will be created
+  + resource "azurerm_private_dns_zone" "default" {
+      + id                                                    = (known after apply)
+      + max_number_of_record_sets                             = (known after apply)
+      + max_number_of_virtual_network_links                   = (known after apply)
+      + max_number_of_virtual_network_links_with_registration = (known after apply)
+      + name                                                  = "privatelink.azurewebsites.net"
+      + number_of_record_sets                                 = (known after apply)
+      + resource_group_name                                   = "rg-iep-wus2-dev-network-005"
+      + tags                                                  = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+
+      + soa_record (known after apply)
+    }
+
+  # module.web_app.azurerm_private_dns_zone_virtual_network_link.default["vnet-iep-wus2-dev-005"] will be created
+  + resource "azurerm_private_dns_zone_virtual_network_link" "default" {
+      + id                    = (known after apply)
+      + name                  = "vnet-iep-wus2-dev-005"
+      + private_dns_zone_name = "privatelink.azurewebsites.net"
+      + registration_enabled  = false
+      + resolution_policy     = (known after apply)
+      + resource_group_name   = "rg-iep-wus2-dev-network-005"
+      + virtual_network_id    = "/subscriptions/dec9c331-d773-4f77-a5a8-39e95699c4a5/resourceGroups/rg-iep-wus2-dev-network-005/providers/Microsoft.Network/virtualNetworks/vnet-iep-wus2-dev-005"
+    }
+
+  # module.web_app.azurerm_private_endpoint.default[0] will be created
+  + resource "azurerm_private_endpoint" "default" {
+      + custom_dns_configs       = (known after apply)
+      + id                       = (known after apply)
+      + location                 = "westus2"
+      + name                     = "pep-iep-wus2-dev-appservice-005"
+      + network_interface        = (known after apply)
+      + private_dns_zone_configs = (known after apply)
+      + resource_group_name      = "rg-iep-wus2-dev-network-005"
+      + subnet_id                = (known after apply)
+      + tags                     = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+
+      + private_dns_zone_group {
+          + id                   = (known after apply)
+          + name                 = "default"
+          + private_dns_zone_ids = (known after apply)
+        }
+
+      + private_service_connection {
+          + is_manual_connection           = false
+          + name                           = "plsc-iep-wus2-dev-appservice-005"
+          + private_connection_resource_id = (known after apply)
+          + private_ip_address             = (known after apply)
+          + subresource_names              = [
+              + "sites",
+            ]
+        }
+    }
+
+  # module.web_app.azurerm_windows_web_app.this[0] will be created
+  + resource "azurerm_windows_web_app" "this" {
+      + client_affinity_enabled                        = false
+      + client_certificate_enabled                     = false
+      + client_certificate_mode                        = "Required"
+      + custom_domain_verification_id                  = (sensitive value)
+      + default_hostname                               = (known after apply)
+      + enabled                                        = true
+      + ftp_publish_basic_authentication_enabled       = false
+      + hosting_environment_id                         = (known after apply)
+      + https_only                                     = true
+      + id                                             = (known after apply)
+      + key_vault_reference_identity_id                = (known after apply)
+      + kind                                           = (known after apply)
+      + location                                       = "westus2"
+      + name                                           = "app-iep-wus2-dev-005"
+      + outbound_ip_address_list                       = (known after apply)
+      + outbound_ip_addresses                          = (known after apply)
+      + possible_outbound_ip_address_list              = (known after apply)
+      + possible_outbound_ip_addresses                 = (known after apply)
+      + public_network_access_enabled                  = false
+      + resource_group_name                            = "rg-iep-wus2-dev-hosting-005"
+      + service_plan_id                                = (known after apply)
+      + site_credential                                = (sensitive value)
+      + tags                                           = {
+          + "environment" = "dev"
+          + "managedBy"   = "terraform"
+          + "workload"    = "456TRF"
+        }
+      + virtual_network_backup_restore_enabled         = false
+      + virtual_network_image_pull_enabled             = (known after apply)
+      + virtual_network_subnet_id                      = (known after apply)
+      + webdeploy_publish_basic_authentication_enabled = false
+      + zip_deploy_file                                = (known after apply)
+
+      + identity {
+          + principal_id = (known after apply)
+          + tenant_id    = (known after apply)
+          + type         = "SystemAssigned"
+        }
+
+      + site_config {
+          + always_on                               = false
+          + container_registry_use_managed_identity = false
+          + default_documents                       = (known after apply)
+          + detailed_error_logging_enabled          = (known after apply)
+          + ftps_state                              = "FtpsOnly"
+          + health_check_eviction_time_in_min       = 2
+          + health_check_path                       = "/healthz"
+          + http2_enabled                           = true
+          + ip_restriction_default_action           = "Allow"
+          + linux_fx_version                        = (known after apply)
+          + load_balancing_mode                     = "LeastRequests"
+          + local_mysql_enabled                     = false
+          + managed_pipeline_mode                   = "Integrated"
+          + minimum_tls_version                     = "1.2"
+          + remote_debugging_enabled                = false
+          + remote_debugging_version                = (known after apply)
+          + scm_ip_restriction_default_action       = "Allow"
+          + scm_minimum_tls_version                 = "1.2"
+          + scm_type                                = (known after apply)
+          + scm_use_main_ip_restriction             = false
+          + use_32_bit_worker                       = false
+          + vnet_route_all_enabled                  = false
+          + websockets_enabled                      = true
+          + windows_fx_version                      = (known after apply)
+          + worker_count                            = (known after apply)
+
+          + application_stack (known after apply)
+        }
+    }
+
+  # module.network.module.nsg_diagnostic_settings["nsg-iep-wus2-dev-appservice-005"].azurerm_monitor_diagnostic_setting.this["nsg-iep-wus2-dev-appservice-005-diagnosticSettings"] will be created
+  + resource "azurerm_monitor_diagnostic_setting" "this" {
+      + id                             = (known after apply)
+      + log_analytics_destination_type = (known after apply)
+      + log_analytics_workspace_id     = (known after apply)
+      + name                           = "nsg-iep-wus2-dev-appservice-005-diagnosticSettings"
+      + target_resource_id             = (known after apply)
+
+      + enabled_log {
+          + category_group = "allLogs"
+            # (1 unchanged attribute hidden)
+        }
+
+      + enabled_metric (known after apply)
+
+      + metric (known after apply)
+    }
+
+  # module.network.module.nsg_diagnostic_settings["nsg-iep-wus2-dev-postgresql-005"].azurerm_monitor_diagnostic_setting.this["nsg-iep-wus2-dev-postgresql-005-diagnosticSettings"] will be created
+  + resource "azurerm_monitor_diagnostic_setting" "this" {
+      + id                             = (known after apply)
+      + log_analytics_destination_type = (known after apply)
+      + log_analytics_workspace_id     = (known after apply)
+      + name                           = "nsg-iep-wus2-dev-postgresql-005-diagnosticSettings"
+      + target_resource_id             = (known after apply)
+
+      + enabled_log {
+          + category_group = "allLogs"
+            # (1 unchanged attribute hidden)
+        }
+
+      + enabled_metric (known after apply)
+
+      + metric (known after apply)
+    }
+
+  # module.network.module.nsg_diagnostic_settings["nsg-iep-wus2-dev-privateendpoint-005"].azurerm_monitor_diagnostic_setting.this["nsg-iep-wus2-dev-privateendpoint-005-diagnosticSettings"] will be created
+  + resource "azurerm_monitor_diagnostic_setting" "this" {
+      + id                             = (known after apply)
+      + log_analytics_destination_type = (known after apply)
+      + log_analytics_workspace_id     = (known after apply)
+      + name                           = "nsg-iep-wus2-dev-privateendpoint-005-diagnosticSettings"
+      + target_resource_id             = (known after apply)
+
+      + enabled_log {
+          + category_group = "allLogs"
+            # (1 unchanged attribute hidden)
+        }
+
+      + enabled_metric (known after apply)
+
+      + metric (known after apply)
+    }
+
+  # module.postgresql[0].module.role_assignments.azurerm_role_assignment.this["app-service-reader"] will be created
+  + resource "azurerm_role_assignment" "this" {
+      + condition_version                = (known after apply)
+      + description                      = "Allows the web app system-assigned identity to read PostgreSQL flexible server resource metadata."
+      + id                               = (known after apply)
+      + name                             = (known after apply)
+      + principal_id                     = (known after apply)
+      + principal_type                   = "ServicePrincipal"
+      + role_definition_id               = (known after apply)
+      + role_definition_name             = "Reader"
+      + scope                            = (known after apply)
+      + skip_service_principal_aad_check = (known after apply)
+    }
+
+Plan: 45 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + app_service_plan_resource_id             = (known after apply)
+  + data_resource_group_name                 = "rg-iep-wus2-dev-data-005"
+  + hosting_resource_group_name              = "rg-iep-wus2-dev-hosting-005"
+  + key_vault_name                           = "kv-iep-wus2-dev-005"
+  + key_vault_resource_id                    = (known after apply)
+  + log_analytics_workspace_created_name     = "log-iep-wus2-dev-005"
+  + log_analytics_workspace_used_resource_id = (known after apply)
+  + network_edge_resource_group_name         = "rg-iep-wus2-dev-network-edge-005"
+  + network_resource_group_name              = "rg-iep-wus2-dev-network-005"
+  + operations_resource_group_name           = "rg-iep-wus2-dev-operations-005"
+  + postgresql_private_dns_zone_name         = "pdz-iep-wus2-dev-postgresql-005.postgres.database.azure.com"
+  + postgresql_server_fqdn                   = (known after apply)
+  + postgresql_server_name                   = "psqlfx-iep-wus2-dev-postgresql-005"
+  + postgresql_server_resource_id            = (known after apply)
+  ~ resource_group_name_map                  = {
+      ~ data        = "rg-iep-wus2-dev-data-004" -> "rg-iep-wus2-dev-data-005"
+      ~ hosting     = "rg-iep-wus2-dev-hosting-004" -> "rg-iep-wus2-dev-hosting-005"
+      ~ network     = "rg-iep-wus2-dev-network-004" -> "rg-iep-wus2-dev-network-005"
+      ~ networkEdge = "rg-iep-wus2-dev-network-edge-004" -> "rg-iep-wus2-dev-network-edge-005"
+      ~ operations  = "rg-iep-wus2-dev-operations-004" -> "rg-iep-wus2-dev-operations-005"
+    }
+  + spoke_resource_group_name                = "rg-iep-wus2-dev-network-005"
+  + spoke_vnet_name                          = "vnet-iep-wus2-dev-005"
+  + spoke_vnet_resource_id                   = (known after apply)
+  + web_app_host_name                        = (known after apply)
+  + web_app_location                         = "westus2"
+  + web_app_managed_identity_principal_id    = (known after apply)
+  + web_app_name                             = "app-iep-wus2-dev-005"
+  + web_app_resource_id                      = (known after apply)
+
+─────────────────────────────────────────────────────────────────────────────
+
+Note: You didn't use the -out option to save this plan, so Terraform can't
+guarantee to take exactly these actions if you run "terraform apply" now.
+Releasing state lock. This may take a few moments...
