@@ -131,18 +131,34 @@ variable "deploy_postgresql" {
 
 variable "spoke_network_config" {
   type = object({
-    vnetAddressSpace                           = string
-    appSvcSubnetAddressSpace                   = string
-    appSvcSubnetDefaultOutboundAccess          = optional(bool)
-    privateEndpointSubnetAddressSpace          = string
-    privateEndpointSubnetDefaultOutboundAccess = optional(bool)
-    applicationGatewayConfig = optional(object({
-      subnetAddressSpace    = string
-      defaultOutboundAccess = optional(bool)
-    }))
-    postgreSqlPrivateAccessConfig = optional(object({
-      subnetAddressSpace    = string
-      defaultOutboundAccess = optional(bool)
+    workloadDescription = optional(string)
+    vnetAddressSpace    = string
+    subnetPlan = list(object({
+      key                               = string
+      nameSuffix                        = string
+      cidr                              = string
+      create                            = bool
+      purpose                           = optional(string)
+      delegationProfile                 = string
+      nsgProfile                        = string
+      routeProfile                      = string
+      privateEndpointNetworkPolicies    = optional(string)
+      privateLinkServiceNetworkPolicies = optional(string)
+      serviceEndpoints                  = optional(list(string), [])
+      defaultOutboundAccess             = optional(bool)
+      sharingScope                      = optional(string)
+      roleAssignments = optional(list(object({
+        key                                = string
+        roleDefinitionId                   = optional(string)
+        roleDefinitionName                 = optional(string)
+        principalId                        = string
+        principalType                      = optional(string)
+        description                        = optional(string)
+        condition                          = optional(string)
+        conditionVersion                   = optional(string)
+        delegatedManagedIdentityResourceId = optional(string)
+        name                               = optional(string)
+      })), [])
     }))
     hubPeeringConfig = optional(object({
       virtualNetworkResourceId  = string
@@ -173,6 +189,7 @@ variable "spoke_network_config" {
     encryption                        = bool
     encryptionEnforcement             = string
     flowTimeoutInMinutes              = optional(number)
+    enableVmProtection                = optional(bool)
     bgpCommunity                      = optional(string)
     enablePrivateEndpointVNetPolicies = optional(string)
     lock = optional(object({
@@ -231,13 +248,93 @@ variable "spoke_network_config" {
 
   validation {
     condition = (
-      var.spoke_network_config.ingressOption != "applicationGateway" ||
-      (
-        var.spoke_network_config.applicationGatewayConfig != null &&
-        trimspace(var.spoke_network_config.applicationGatewayConfig.subnetAddressSpace) != ""
-      )
+      length([
+        for subnet in var.spoke_network_config.subnetPlan :
+        subnet.key
+        if subnet.key == "appService"
+      ]) <= 1
     )
-    error_message = "spoke_network_config.applicationGatewayConfig.subnetAddressSpace must be provided when ingressOption is applicationGateway."
+    error_message = "spoke_network_config.subnetPlan must not declare more than one subnet with key \"appService\"."
+  }
+
+  validation {
+    condition = (
+      length([
+        for subnet in var.spoke_network_config.subnetPlan :
+        subnet.key
+        if subnet.key == "privateEndpoints"
+      ]) <= 1
+    )
+    error_message = "spoke_network_config.subnetPlan must not declare more than one subnet with key \"privateEndpoints\"."
+  }
+
+  validation {
+    condition = (
+      length([
+        for subnet in var.spoke_network_config.subnetPlan :
+        subnet.key
+        if subnet.key == "postgresql"
+      ]) <= 1
+    )
+    error_message = "spoke_network_config.subnetPlan must not declare more than one subnet with key \"postgresql\"."
+  }
+
+  validation {
+    condition = (
+      length([
+        for subnet in var.spoke_network_config.subnetPlan :
+        subnet.key
+        if subnet.key == "applicationGateway"
+      ]) <= 1
+    )
+    error_message = "spoke_network_config.subnetPlan must not declare more than one subnet with key \"applicationGateway\"."
+  }
+
+  validation {
+    condition = (
+      length([
+        for subnet in var.spoke_network_config.subnetPlan :
+        subnet.key
+        if subnet.key == "appService" && subnet.create
+      ]) == 1
+    )
+    error_message = "spoke_network_config.subnetPlan must declare a created subnet with key \"appService\"."
+  }
+
+  validation {
+    condition = (
+      !var.deploy_private_networking ||
+      length([
+        for subnet in var.spoke_network_config.subnetPlan :
+        subnet.key
+        if subnet.key == "privateEndpoints" && subnet.create
+      ]) == 1
+    )
+    error_message = "When deploy_private_networking is true, spoke_network_config.subnetPlan must declare a created subnet with key \"privateEndpoints\"."
+  }
+
+  validation {
+    condition = (
+      !(var.deploy_postgresql && var.postgresql_config.privateAccessMode == "delegatedSubnet") ||
+      length([
+        for subnet in var.spoke_network_config.subnetPlan :
+        subnet.key
+        if subnet.key == "postgresql" && subnet.create
+      ]) == 1
+    )
+    error_message = "When PostgreSQL delegated private access is enabled, spoke_network_config.subnetPlan must declare a created subnet with key \"postgresql\"."
+  }
+
+  validation {
+    condition = (
+      var.spoke_network_config.ingressOption != "applicationGateway" ||
+      length([
+        for subnet in var.spoke_network_config.subnetPlan :
+        subnet.key
+        if subnet.key == "applicationGateway" && subnet.create
+      ]) == 1
+    )
+    error_message = "When spoke_network_config.ingressOption is applicationGateway, spoke_network_config.subnetPlan must declare a created subnet with key \"applicationGateway\"."
   }
 
   validation {
@@ -258,10 +355,62 @@ variable "spoke_network_config" {
     )
     error_message = "spoke_network_config.enablePrivateEndpointVNetPolicies must be Basic, Disabled, or omitted."
   }
+
+  validation {
+    condition = alltrue([
+      for subnet in var.spoke_network_config.subnetPlan :
+      contains(["none", "appServicePlan", "appServiceEnvironment", "postgresqlFlexibleServer"], subnet.delegationProfile)
+    ])
+    error_message = "Each spoke_network_config.subnetPlan item must use a supported delegationProfile."
+  }
+
+  validation {
+    condition = alltrue([
+      for subnet in var.spoke_network_config.subnetPlan :
+      contains(["none", "appService", "ase", "privateEndpoint", "postgresql", "applicationGateway"], subnet.nsgProfile)
+    ])
+    error_message = "Each spoke_network_config.subnetPlan item must use a supported nsgProfile."
+  }
+
+  validation {
+    condition = alltrue([
+      for subnet in var.spoke_network_config.subnetPlan :
+      contains(["none", "egressLockdown"], subnet.routeProfile)
+    ])
+    error_message = "Each spoke_network_config.subnetPlan item must use a supported routeProfile."
+  }
+
+  validation {
+    condition = alltrue([
+      for subnet in var.spoke_network_config.subnetPlan :
+      subnet.privateEndpointNetworkPolicies == null ||
+      contains(["Disabled", "Enabled", "NetworkSecurityGroupEnabled", "RouteTableEnabled"], subnet.privateEndpointNetworkPolicies)
+    ])
+    error_message = "Each spoke_network_config.subnetPlan item must use a supported privateEndpointNetworkPolicies value when provided."
+  }
+
+  validation {
+    condition = alltrue([
+      for subnet in var.spoke_network_config.subnetPlan :
+      subnet.privateLinkServiceNetworkPolicies == null ||
+      contains(["Disabled", "Enabled"], subnet.privateLinkServiceNetworkPolicies)
+    ])
+    error_message = "Each spoke_network_config.subnetPlan item must use Disabled or Enabled for privateLinkServiceNetworkPolicies when provided."
+  }
+
+  validation {
+    condition = alltrue([
+      for subnet in var.spoke_network_config.subnetPlan :
+      subnet.sharingScope == null ||
+      contains(["DelegatedServices", "Tenant"], subnet.sharingScope)
+    ])
+    error_message = "Each spoke_network_config.subnetPlan item must use DelegatedServices or Tenant for sharingScope when provided."
+  }
 }
 
 variable "service_plan_config" {
   type = object({
+    workloadDescription       = optional(string)
     sku                       = string
     skuCapacity               = number
     zoneRedundant             = bool
@@ -321,6 +470,7 @@ variable "service_plan_config" {
 
 variable "app_service_config" {
   type = object({
+    workloadDescription               = optional(string)
     workloadMode                      = string
     enabled                           = bool
     httpsOnly                         = bool
@@ -702,9 +852,9 @@ variable "front_door_config" {
     managedIdentities = object({
       systemAssigned = bool
     })
-    autoApprovePrivateEndpoint    = optional(bool, false)
+    autoApprovePrivateEndpoint      = optional(bool, false)
     afdPeAutoApproverIsolationScope = optional(string)
-    enableDefaultWafMethodBlock = bool
+    enableDefaultWafMethodBlock     = bool
     wafCustomRules = optional(list(object({
       name                       = string
       action                     = string
