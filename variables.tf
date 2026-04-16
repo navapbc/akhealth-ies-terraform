@@ -702,6 +702,8 @@ variable "front_door_config" {
     managedIdentities = object({
       systemAssigned = bool
     })
+    autoApprovePrivateEndpoint    = optional(bool, false)
+    afdPeAutoApproverIsolationScope = optional(string)
     enableDefaultWafMethodBlock = bool
     wafCustomRules = optional(list(object({
       name                       = string
@@ -856,6 +858,14 @@ variable "front_door_config" {
       ]
     ]))
     error_message = "Each Front Door route must reference an origin group declared in front_door_config.originGroups."
+  }
+
+  validation {
+    condition = (
+      var.front_door_config.afdPeAutoApproverIsolationScope == null ||
+      contains(["None", "Regional"], var.front_door_config.afdPeAutoApproverIsolationScope)
+    )
+    error_message = "front_door_config.afdPeAutoApproverIsolationScope must be one of None or Regional when provided."
   }
 }
 

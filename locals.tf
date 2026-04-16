@@ -49,8 +49,21 @@ locals {
   deploy_app_service_plan               = !local.use_existing_app_service_plan
   use_front_door_ingress                = var.spoke_network_config.ingressOption == "frontDoor"
   use_application_gateway_ingress       = var.spoke_network_config.ingressOption == "applicationGateway"
+  auto_approve_afd_private_endpoint     = local.use_front_door_ingress && local.web_app_private_networking_enabled && var.front_door_config.autoApprovePrivateEndpoint
   spoke_vnet_name                       = substr("vnet-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}${local.workload_segment}-${var.instance_number}", 0, 80)
   spoke_vnet_resource_id                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${local.resource_group_name_map.network}/providers/Microsoft.Network/virtualNetworks/${local.spoke_vnet_name}"
+  afd_pe_auto_approver_identity_name    = substr("id-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}-afdprivateendpointapprover-${var.instance_number}", 0, 128)
+  afd_pe_auto_approver_script_name      = substr("script-${var.system_abbreviation}-${local.region_abbreviation}-${var.environment_abbreviation}-afdapproval-${var.instance_number}", 0, 90)
+  afd_private_endpoint_approval_script_content = <<-SCRIPT
+    rg_name="$ResourceGroupName"; webapp_ids=$(az webapp list -g $rg_name --query "[].id" -o tsv); for webapp_id in $webapp_ids; do fd_conn_ids=$(az network private-endpoint-connection list --id $webapp_id --query "[?properties.provisioningState == 'Pending'].id" -o tsv); for fd_conn_id in $fd_conn_ids; do az network private-endpoint-connection approve --id "$fd_conn_id" --description "ApprovedByCli"; done; done
+  SCRIPT
+  afd_private_endpoint_approval_force_update_tag = sha1(jsonencode({
+    frontDoorProfileId = local.use_front_door_ingress ? module.front_door[0].resource_id : null
+    webAppResourceId   = module.web_app.resource_id
+    hostingRgName      = azurerm_resource_group.resourceGroups["hosting"].name
+    originGroups       = var.front_door_config.originGroups
+    afdEndpoints       = var.front_door_config.afdEndpoints
+  }))
   resolved_log_analytics_workspace_id   = var.existing_log_analytics_id != null ? var.existing_log_analytics_id : module.log_analytics_workspace[0].resource_id
   resolved_app_service_plan_resource_id = local.use_existing_app_service_plan ? var.service_plan_config.existingPlanId : module.app_service_plan[0].resource_id
   postgresql_role_assignments = concat(var.postgresql_config.roleAssignments, var.postgresql_config.grantAppServiceIdentityReaderRole ? [{
