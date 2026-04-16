@@ -48,54 +48,38 @@ variable "location" {
   }
 }
 
-variable "deploy_ase_v3" {
-  type = bool
-}
-
-variable "deploy_private_networking" {
-  type = bool
-}
-
-variable "app_service_subnet_default_outbound_access" {
-  type    = bool
-  default = null
-}
-
 variable "vnet_spoke_address_space" {
   type = string
 }
 
-variable "subnet_spoke_appsvc_address_space" {
-  type = string
-}
-
-variable "subnet_spoke_private_endpoint_address_space" {
-  type = string
-}
-
-variable "private_endpoint_subnet_default_outbound_access" {
-  type    = bool
-  default = null
-}
-
-variable "application_gateway_config" {
-  type = object({
-    subnetAddressSpace    = string
-    defaultOutboundAccess = optional(bool)
-  })
-  default = null
-}
-
-variable "deploy_application_gateway_subnet" {
-  type = bool
-}
-
-variable "postgresql_private_access_config" {
-  type = object({
-    subnetAddressSpace    = string
-    defaultOutboundAccess = optional(bool)
-  })
-  default = null
+variable "subnet_plan" {
+  type = list(object({
+    key                               = string
+    nameSuffix                        = string
+    cidr                              = string
+    create                            = bool
+    purpose                           = optional(string)
+    delegationProfile                 = string
+    nsgProfile                        = string
+    routeProfile                      = string
+    privateEndpointNetworkPolicies    = optional(string)
+    privateLinkServiceNetworkPolicies = optional(string)
+    serviceEndpoints                  = optional(list(string), [])
+    defaultOutboundAccess             = optional(bool)
+    sharingScope                      = optional(string)
+    roleAssignments = optional(list(object({
+      key                                = string
+      roleDefinitionId                   = optional(string)
+      roleDefinitionName                 = optional(string)
+      principalId                        = string
+      principalType                      = optional(string)
+      description                        = optional(string)
+      condition                          = optional(string)
+      conditionVersion                   = optional(string)
+      delegatedManagedIdentityResourceId = optional(string)
+      name                               = optional(string)
+    })), [])
+  }))
 }
 
 variable "tags" {
@@ -110,11 +94,6 @@ variable "enable_egress_lockdown" {
 variable "egress_firewall_internal_ip" {
   type    = string
   default = null
-}
-
-variable "deploy_postgresql_private_access" {
-  type    = bool
-  default = false
 }
 
 variable "nsg_diagnostic_settings" {

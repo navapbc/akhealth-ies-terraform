@@ -1,11 +1,21 @@
 locals {
-  name                   = substr("psqlfx-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-${var.workload_description}-${var.instance_number}", 0, 63)
-  private_access_enabled = var.private_access_mode == "delegatedSubnet"
-  private_dns_zone_label = substr("pdz-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-${var.workload_description}-${var.instance_number}", 0, 63)
-  private_dns_zone_name  = "${local.private_dns_zone_label}.postgres.database.azure.com"
+  name                     = substr("psqlfx-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-${var.workload_description}-${var.instance_number}", 0, 63)
+  private_access_enabled   = var.private_access_mode == "delegatedSubnet"
+  private_dns_zone_label   = substr("pdz-${var.system_abbreviation}-${var.region_abbreviation}-${var.environment_abbreviation}-${var.workload_description}-${var.instance_number}", 0, 63)
+  private_dns_zone_name    = "${local.private_dns_zone_label}.postgres.database.azure.com"
   private_dns_zone_rg_name = coalesce(var.private_dns_zone_resource_group_name, var.resource_group_name)
-  storage_mb             = var.storage_size_gb * 1024
-  public_network_access  = var.public_network_access == "Enabled"
+  storage_mb               = var.storage_size_gb * 1024
+  public_network_access    = var.public_network_access == "Enabled"
+  # Bicep/ARM expresses PostgreSQL Flexible Server SKUs as `Standard_*`, while
+  # AzureRM still validates provider-style tier-prefixed SKUs such as
+  # `B_Standard_B1ms` or `GP_Standard_D2s_v3`.
+  normalized_sku_name = (
+    can(regex("^(B|GP|MO)_", var.sku_name)) ? var.sku_name :
+    startswith(var.sku_name, "Standard_B") ? "B_${var.sku_name}" :
+    startswith(var.sku_name, "Standard_D") ? "GP_${var.sku_name}" :
+    startswith(var.sku_name, "Standard_E") || startswith(var.sku_name, "Standard_M") ? "MO_${var.sku_name}" :
+    var.sku_name
+  )
 }
 
 resource "azurerm_private_dns_zone" "this" {
@@ -35,7 +45,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
   resource_group_name           = var.resource_group_name
   location                      = var.location
   version                       = var.engine_version
-  sku_name                      = var.sku_name
+  sku_name                      = local.normalized_sku_name
   storage_mb                    = local.storage_mb
   backup_retention_days         = var.backup_retention_days
   auto_grow_enabled             = var.auto_grow == "Enabled"

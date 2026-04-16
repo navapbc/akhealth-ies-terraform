@@ -4,47 +4,71 @@ locals {
   shared_name_suffix = "${local.workload_segment}-${var.instance_number}"
 
   names = {
-    vnet_spoke      = substr("vnet-${local.shared_name_prefix}${local.shared_name_suffix}", 0, 80)
-    snet_appsvc     = substr("snet-${local.shared_name_prefix}-appservice-${var.instance_number}", 0, 80)
-    snet_pe         = substr("snet-${local.shared_name_prefix}-privateendpoint-${var.instance_number}", 0, 80)
-    snet_postgresql = substr("snet-${local.shared_name_prefix}-postgresql-${var.instance_number}", 0, 80)
-    snet_appgw      = substr("snet-${local.shared_name_prefix}-appgateway-${var.instance_number}", 0, 80)
-    nsg_appsvc      = substr("nsg-${local.shared_name_prefix}-appservice-${var.instance_number}", 0, 80)
-    nsg_pe          = substr("nsg-${local.shared_name_prefix}-privateendpoint-${var.instance_number}", 0, 80)
-    nsg_postgresql  = substr("nsg-${local.shared_name_prefix}-postgresql-${var.instance_number}", 0, 80)
-    nsg_ase         = substr("nsg-${local.shared_name_prefix}-ase-${var.instance_number}", 0, 80)
-    nsg_appgw       = substr("nsg-${local.shared_name_prefix}-appgateway-${var.instance_number}", 0, 80)
-    route_table     = substr("rt-${local.shared_name_prefix}${local.shared_name_suffix}", 0, 80)
-    route_name      = substr("rte-${local.shared_name_prefix}-egresslockdown-${var.instance_number}", 0, 80)
+    vnet_spoke  = substr("vnet-${local.shared_name_prefix}${local.shared_name_suffix}", 0, 80)
+    nsg_appsvc  = substr("nsg-${local.shared_name_prefix}-appservice-${var.instance_number}", 0, 80)
+    nsg_pe      = substr("nsg-${local.shared_name_prefix}-privateendpoint-${var.instance_number}", 0, 80)
+    nsg_pgsql   = substr("nsg-${local.shared_name_prefix}-postgresql-${var.instance_number}", 0, 80)
+    nsg_ase     = substr("nsg-${local.shared_name_prefix}-ase-${var.instance_number}", 0, 80)
+    nsg_appgw   = substr("nsg-${local.shared_name_prefix}-appgateway-${var.instance_number}", 0, 80)
+    route_table = substr("rt-${local.shared_name_prefix}${local.shared_name_suffix}", 0, 80)
+    route_name  = substr("route-${local.shared_name_prefix}-egresslockdown-${var.instance_number}", 0, 80)
   }
 
-  create_private_endpoint_subnet      = var.deploy_private_networking
-  create_postgresql_subnet            = var.deploy_postgresql_private_access
-  create_app_gateway_subnet           = var.deploy_application_gateway_subnet
-  app_service_delegation_name         = var.deploy_ase_v3 ? "Microsoft.Web/hostingEnvironments" : "Microsoft.Web/serverfarms"
-  app_service_service_delegation_name = var.deploy_ase_v3 ? "Microsoft.Web/hostingEnvironments" : "Microsoft.Web/serverFarms"
-  app_service_subnet_nsg_id           = var.deploy_ase_v3 ? azurerm_network_security_group.ase[0].id : azurerm_network_security_group.appsvc[0].id
-  app_service_private_endpoint_policy = var.deploy_ase_v3 ? "Disabled" : "Enabled"
-  nsg_diagnostic_targets = merge(
-    var.deploy_ase_v3 ? {
-      (local.names.nsg_ase) = azurerm_network_security_group.ase[0].id
-      } : {
-      (local.names.nsg_appsvc) = azurerm_network_security_group.appsvc[0].id
-    },
-    local.create_private_endpoint_subnet ? {
-      (local.names.nsg_pe) = azurerm_network_security_group.private_endpoint[0].id
-    } : {},
-    local.create_postgresql_subnet ? {
-      (local.names.nsg_postgresql) = azurerm_network_security_group.postgresql[0].id
-    } : {},
-    local.create_app_gateway_subnet ? {
-      (local.names.nsg_appgw) = azurerm_network_security_group.app_gateway[0].id
-    } : {}
+  created_subnets = {
+    for subnet in var.subnet_plan :
+    subnet.key => subnet
+    if subnet.create
+  }
+
+  created_subnet_names = {
+    for key, subnet in local.created_subnets :
+    key => substr("snet-${local.shared_name_prefix}-${subnet.nameSuffix}-${var.instance_number}", 0, 80)
+  }
+
+  created_nsg_profiles = toset(distinct([
+    for subnet in values(local.created_subnets) :
+    subnet.nsgProfile
+    if subnet.nsgProfile != "none"
+  ]))
+
+  created_route_profiles = toset(distinct([
+    for subnet in values(local.created_subnets) :
+    subnet.routeProfile
+    if subnet.routeProfile != "none"
+  ]))
+
+  subnet_delegation_names = {
+    appServicePlan           = "Microsoft.Web/serverFarms"
+    appServiceEnvironment    = "Microsoft.Web/hostingEnvironments"
+    postgresqlFlexibleServer = "Microsoft.DBforPostgreSQL/flexibleServers"
+  }
+
+  subnet_nsg_names = {
+    appService         = local.names.nsg_appsvc
+    privateEndpoint    = local.names.nsg_pe
+    postgresql         = local.names.nsg_pgsql
+    ase                = local.names.nsg_ase
+    applicationGateway = local.names.nsg_appgw
+  }
+
+  create_egress_route_table = contains(local.created_route_profiles, "egressLockdown")
+
+  nsg_ids_by_profile = merge(
+    contains(local.created_nsg_profiles, "appService") ? { appService = azurerm_network_security_group.appsvc[0].id } : {},
+    contains(local.created_nsg_profiles, "privateEndpoint") ? { privateEndpoint = azurerm_network_security_group.private_endpoint[0].id } : {},
+    contains(local.created_nsg_profiles, "postgresql") ? { postgresql = azurerm_network_security_group.postgresql[0].id } : {},
+    contains(local.created_nsg_profiles, "ase") ? { ase = azurerm_network_security_group.ase[0].id } : {},
+    contains(local.created_nsg_profiles, "applicationGateway") ? { applicationGateway = azurerm_network_security_group.app_gateway[0].id } : {}
   )
+
+  nsg_diagnostic_targets = {
+    for profile, id in local.nsg_ids_by_profile :
+    local.subnet_nsg_names[profile] => id
+  }
 }
 
 resource "azurerm_route_table" "egress" {
-  count = var.enable_egress_lockdown ? 1 : 0
+  count = local.create_egress_route_table && var.enable_egress_lockdown ? 1 : 0
 
   name                          = local.names.route_table
   location                      = var.location
@@ -61,7 +85,7 @@ resource "azurerm_route_table" "egress" {
 }
 
 resource "azurerm_network_security_group" "appsvc" {
-  count = var.deploy_ase_v3 ? 0 : 1
+  count = contains(local.created_nsg_profiles, "appService") ? 1 : 0
 
   name                = local.names.nsg_appsvc
   location            = var.location
@@ -82,7 +106,7 @@ resource "azurerm_network_security_group" "appsvc" {
 }
 
 resource "azurerm_network_security_group" "private_endpoint" {
-  count = local.create_private_endpoint_subnet ? 1 : 0
+  count = contains(local.created_nsg_profiles, "privateEndpoint") ? 1 : 0
 
   name                = local.names.nsg_pe
   location            = var.location
@@ -91,16 +115,16 @@ resource "azurerm_network_security_group" "private_endpoint" {
 }
 
 resource "azurerm_network_security_group" "postgresql" {
-  count = local.create_postgresql_subnet ? 1 : 0
+  count = contains(local.created_nsg_profiles, "postgresql") ? 1 : 0
 
-  name                = local.names.nsg_postgresql
+  name                = local.names.nsg_pgsql
   location            = var.location
   resource_group_name = var.resource_group_name
   tags                = var.tags
 }
 
 resource "azurerm_network_security_group" "ase" {
-  count = var.deploy_ase_v3 ? 1 : 0
+  count = contains(local.created_nsg_profiles, "ase") ? 1 : 0
 
   name                = local.names.nsg_ase
   location            = var.location
@@ -121,7 +145,7 @@ resource "azurerm_network_security_group" "ase" {
 }
 
 resource "azurerm_network_security_group" "app_gateway" {
-  count = local.create_app_gateway_subnet ? 1 : 0
+  count = contains(local.created_nsg_profiles, "applicationGateway") ? 1 : 0
 
   name                = local.names.nsg_appgw
   location            = var.location
@@ -183,7 +207,7 @@ resource "azurerm_virtual_network" "this" {
   resource_group_name            = var.resource_group_name
   address_space                  = [var.vnet_spoke_address_space]
   dns_servers                    = var.dns_servers
-  flow_timeout_in_minutes        = var.flow_timeout_in_minutes
+  flow_timeout_in_minutes        = var.flow_timeout_in_minutes == null || var.flow_timeout_in_minutes == 0 ? null : var.flow_timeout_in_minutes
   bgp_community                  = var.virtual_network_bgp_community
   private_endpoint_vnet_policies = var.private_endpoint_vnet_policies
   tags                           = var.tags
@@ -204,96 +228,73 @@ resource "azurerm_virtual_network" "this" {
   }
 }
 
-resource "azurerm_subnet" "app_service" {
-  name                              = local.names.snet_appsvc
+resource "azurerm_subnet" "this" {
+  for_each = local.created_subnets
+
+  name                              = local.created_subnet_names[each.key]
   resource_group_name               = var.resource_group_name
   virtual_network_name              = azurerm_virtual_network.this.name
-  address_prefixes                  = [var.subnet_spoke_appsvc_address_space]
-  default_outbound_access_enabled   = var.app_service_subnet_default_outbound_access
-  private_endpoint_network_policies = local.app_service_private_endpoint_policy
+  address_prefixes                  = [each.value.cidr]
+  default_outbound_access_enabled   = try(each.value.defaultOutboundAccess, null)
+  private_endpoint_network_policies = try(each.value.privateEndpointNetworkPolicies, null)
+  private_link_service_network_policies_enabled = (
+    try(each.value.privateLinkServiceNetworkPolicies, null) == null ?
+    null :
+    each.value.privateLinkServiceNetworkPolicies == "Enabled"
+  )
+  service_endpoints = try(each.value.serviceEndpoints, [])
+  sharing_scope     = try(each.value.sharingScope, null)
 
-  delegation {
-    name = local.app_service_delegation_name
+  dynamic "delegation" {
+    for_each = each.value.delegationProfile == "none" ? [] : [each.value.delegationProfile]
+    content {
+      name = local.subnet_delegation_names[delegation.value]
 
-    service_delegation {
-      name    = local.app_service_service_delegation_name
-      actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+      service_delegation {
+        name = local.subnet_delegation_names[delegation.value]
+        actions = delegation.value == "postgresqlFlexibleServer" ? [
+          "Microsoft.Network/virtualNetworks/subnets/join/action",
+          ] : [
+          "Microsoft.Network/virtualNetworks/subnets/action",
+        ]
+      }
     }
   }
 }
 
-resource "azurerm_subnet" "private_endpoint" {
-  count = local.create_private_endpoint_subnet ? 1 : 0
-
-  name                              = local.names.snet_pe
-  resource_group_name               = var.resource_group_name
-  virtual_network_name              = azurerm_virtual_network.this.name
-  address_prefixes                  = [var.subnet_spoke_private_endpoint_address_space]
-  default_outbound_access_enabled   = var.private_endpoint_subnet_default_outbound_access
-  private_endpoint_network_policies = "Disabled"
-}
-
-resource "azurerm_subnet" "postgresql" {
-  count = local.create_postgresql_subnet ? 1 : 0
-
-  name                              = local.names.snet_postgresql
-  resource_group_name               = var.resource_group_name
-  virtual_network_name              = azurerm_virtual_network.this.name
-  address_prefixes                  = [var.postgresql_private_access_config.subnetAddressSpace]
-  default_outbound_access_enabled   = try(var.postgresql_private_access_config.defaultOutboundAccess, null)
-  private_endpoint_network_policies = "Disabled"
-
-  delegation {
-    name = "Microsoft.DBforPostgreSQL/flexibleServers"
-
-    service_delegation {
-      name    = "Microsoft.DBforPostgreSQL/flexibleServers"
-      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
-    }
+resource "azurerm_subnet_network_security_group_association" "this" {
+  for_each = {
+    for key, subnet in local.created_subnets :
+    key => subnet
+    if subnet.nsgProfile != "none"
   }
+
+  subnet_id                 = azurerm_subnet.this[each.key].id
+  network_security_group_id = local.nsg_ids_by_profile[each.value.nsgProfile]
 }
 
-resource "azurerm_subnet" "app_gateway" {
-  count = local.create_app_gateway_subnet ? 1 : 0
+resource "azurerm_subnet_route_table_association" "this" {
+  for_each = local.create_egress_route_table && var.enable_egress_lockdown ? {
+    for key, subnet in local.created_subnets :
+    key => subnet
+    if subnet.routeProfile == "egressLockdown"
+  } : {}
 
-  name                            = local.names.snet_appgw
-  resource_group_name             = var.resource_group_name
-  virtual_network_name            = azurerm_virtual_network.this.name
-  address_prefixes                = [var.application_gateway_config.subnetAddressSpace]
-  default_outbound_access_enabled = try(var.application_gateway_config.defaultOutboundAccess, null)
-}
-
-resource "azurerm_subnet_network_security_group_association" "app_service" {
-  subnet_id                 = azurerm_subnet.app_service.id
-  network_security_group_id = local.app_service_subnet_nsg_id
-}
-
-resource "azurerm_subnet_route_table_association" "app_service" {
-  count = var.enable_egress_lockdown ? 1 : 0
-
-  subnet_id      = azurerm_subnet.app_service.id
+  subnet_id      = azurerm_subnet.this[each.key].id
   route_table_id = azurerm_route_table.egress[0].id
 }
 
-resource "azurerm_subnet_network_security_group_association" "private_endpoint" {
-  count = local.create_private_endpoint_subnet ? 1 : 0
+module "subnet_role_assignments" {
+  for_each = {
+    for key, subnet in local.created_subnets :
+    key => subnet
+    if length(try(subnet.roleAssignments, [])) > 0
+  }
 
-  subnet_id                 = azurerm_subnet.private_endpoint[0].id
-  network_security_group_id = azurerm_network_security_group.private_endpoint[0].id
-}
+  source = "../common-role-assignments"
 
-resource "azurerm_subnet_network_security_group_association" "postgresql" {
-  count = local.create_postgresql_subnet ? 1 : 0
-
-  subnet_id                 = azurerm_subnet.postgresql[0].id
-  network_security_group_id = azurerm_network_security_group.postgresql[0].id
-}
-
-resource "azurerm_subnet_network_security_group_association" "app_gateway" {
-  count = local.create_app_gateway_subnet ? 1 : 0
-
-  subnet_id                 = azurerm_subnet.app_gateway[0].id
-  network_security_group_id = azurerm_network_security_group.app_gateway[0].id
+  scope            = azurerm_subnet.this[each.key].id
+  role_assignments = each.value.roleAssignments
 }
 
 module "nsg_diagnostic_settings" {
@@ -302,10 +303,13 @@ module "nsg_diagnostic_settings" {
   source = "../common-diagnostic-settings"
 
   target_resource_id = each.value
-  diagnostic_settings = [for diagnostic_setting in var.nsg_diagnostic_settings : merge(diagnostic_setting, {
-    name                = diagnostic_setting.name == null ? "${each.key}-diagnosticSettings" : diagnostic_setting.name
-    workspaceResourceId = diagnostic_setting.workspaceResourceId == null ? var.nsg_diagnostic_default_workspace_resource_id : diagnostic_setting.workspaceResourceId
-  })]
+  diagnostic_settings = [
+    for diagnostic_setting in var.nsg_diagnostic_settings :
+    merge(diagnostic_setting, {
+      name                = diagnostic_setting.name == null ? "${each.key}-diagnosticSettings" : diagnostic_setting.name
+      workspaceResourceId = diagnostic_setting.workspaceResourceId == null ? var.nsg_diagnostic_default_workspace_resource_id : diagnostic_setting.workspaceResourceId
+    })
+  ]
 }
 
 resource "azurerm_virtual_network_peering" "spoke_to_hub" {
