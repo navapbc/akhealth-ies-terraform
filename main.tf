@@ -1,5 +1,7 @@
-resource "azurerm_resource_group" "spoke" {
-  name     = local.resource_group_name
+resource "azurerm_resource_group" "resourceGroups" {
+  for_each = local.resource_group_name_map
+
+  name     = each.value
   location = var.location
   tags     = var.tags
 }
@@ -8,7 +10,7 @@ module "log_analytics_workspace" {
   count  = var.existing_log_analytics_id == null ? 1 : 0
   source = "./modules/log-analytics-workspace"
 
-  resource_group_name                               = azurerm_resource_group.spoke.name
+  resource_group_name                               = azurerm_resource_group.resourceGroups["operations"].name
   system_abbreviation                               = var.system_abbreviation
   environment_abbreviation                          = var.environment_abbreviation
   instance_number                                   = var.instance_number
@@ -30,7 +32,7 @@ module "log_analytics_workspace" {
 module "network" {
   source = "./modules/network"
 
-  resource_group_name                             = azurerm_resource_group.spoke.name
+  resource_group_name                             = azurerm_resource_group.resourceGroups["network"].name
   system_abbreviation                             = var.system_abbreviation
   environment_abbreviation                        = var.environment_abbreviation
   instance_number                                 = var.instance_number
@@ -71,7 +73,7 @@ module "app_service_environment" {
   count  = var.deploy_ase_v3 ? 1 : 0
   source = "./modules/app-service-environment"
 
-  resource_group_name                    = azurerm_resource_group.spoke.name
+  resource_group_name                    = azurerm_resource_group.resourceGroups["hosting"].name
   system_abbreviation                    = var.system_abbreviation
   environment_abbreviation               = var.environment_abbreviation
   instance_number                        = var.instance_number
@@ -94,7 +96,7 @@ module "app_service_environment" {
 module "app_insights" {
   source = "./modules/app-insights"
 
-  resource_group_name                 = azurerm_resource_group.spoke.name
+  resource_group_name                 = azurerm_resource_group.resourceGroups["operations"].name
   system_abbreviation                 = var.system_abbreviation
   environment_abbreviation            = var.environment_abbreviation
   instance_number                     = var.instance_number
@@ -120,7 +122,7 @@ module "app_service_plan" {
   count  = local.deploy_app_service_plan ? 1 : 0
   source = "./modules/app-service-plan"
 
-  resource_group_name                 = azurerm_resource_group.spoke.name
+  resource_group_name                 = azurerm_resource_group.resourceGroups["hosting"].name
   system_abbreviation                 = var.system_abbreviation
   environment_abbreviation            = var.environment_abbreviation
   instance_number                     = var.instance_number
@@ -144,7 +146,7 @@ module "app_service_plan" {
 module "web_app" {
   source = "./modules/web-app"
 
-  resource_group_name                             = azurerm_resource_group.spoke.name
+  resource_group_name                             = azurerm_resource_group.resourceGroups["hosting"].name
   system_abbreviation                             = var.system_abbreviation
   environment_abbreviation                        = var.environment_abbreviation
   instance_number                                 = var.instance_number
@@ -168,6 +170,8 @@ module "web_app" {
   function_host_storage_account                   = var.app_service_config.functionHostStorageAccount
   enable_default_private_endpoint                 = local.web_app_private_networking_enabled
   default_private_endpoint_subnet_resource_id     = module.network.snet_pe_resource_id
+  private_endpoint_resource_group_name            = azurerm_resource_group.resourceGroups["network"].name
+  private_dns_zone_resource_group_name            = azurerm_resource_group.resourceGroups["network"].name
   default_private_dns_zone_virtual_network_links  = local.spoke_private_dns_zone_links
   role_assignments                                = var.app_service_config.roleAssignments
   diagnostic_settings                             = var.app_service_config.diagnosticSettings
@@ -179,7 +183,7 @@ module "front_door_waf_policy" {
   count  = local.use_front_door_ingress ? 1 : 0
   source = "./modules/front-door-waf-policy"
 
-  resource_group_name             = azurerm_resource_group.spoke.name
+  resource_group_name             = azurerm_resource_group.resourceGroups["networkEdge"].name
   system_abbreviation             = var.system_abbreviation
   environment_abbreviation        = var.environment_abbreviation
   instance_number                 = var.instance_number
@@ -197,7 +201,7 @@ module "front_door" {
   count  = local.use_front_door_ingress ? 1 : 0
   source = "./modules/front-door"
 
-  resource_group_name             = azurerm_resource_group.spoke.name
+  resource_group_name             = azurerm_resource_group.resourceGroups["networkEdge"].name
   system_abbreviation             = var.system_abbreviation
   environment_abbreviation        = var.environment_abbreviation
   instance_number                 = var.instance_number
@@ -231,11 +235,61 @@ module "front_door_security_policy" {
   security_patterns_to_match = var.front_door_config.securityPatternsToMatch
 }
 
+resource "azurerm_user_assigned_identity" "afd_private_endpoint_approver" {
+  count = local.auto_approve_afd_private_endpoint ? 1 : 0
+
+  name                = local.afd_pe_auto_approver_identity_name
+  location            = var.location
+  resource_group_name = azurerm_resource_group.resourceGroups["operations"].name
+  isolation_scope     = var.front_door_config.afdPeAutoApproverIsolationScope
+  tags                = var.tags
+}
+
+resource "azurerm_role_assignment" "afd_private_endpoint_approver_contributor" {
+  count = local.auto_approve_afd_private_endpoint ? 1 : 0
+
+  scope                = azurerm_resource_group.resourceGroups["hosting"].id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_user_assigned_identity.afd_private_endpoint_approver[0].principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+resource "azurerm_resource_deployment_script_azure_cli" "afd_private_endpoint_auto_approval" {
+  count = local.auto_approve_afd_private_endpoint ? 1 : 0
+
+  name                = local.afd_pe_auto_approver_script_name
+  location            = var.location
+  resource_group_name = azurerm_resource_group.resourceGroups["operations"].name
+  version             = "2.67.0"
+  script_content      = local.afd_private_endpoint_approval_script_content
+  cleanup_preference  = "OnSuccess"
+  retention_interval  = "P1D"
+  timeout             = "PT30M"
+  force_update_tag    = local.afd_private_endpoint_approval_force_update_tag
+  tags                = var.tags
+
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [azurerm_user_assigned_identity.afd_private_endpoint_approver[0].id]
+  }
+
+  environment_variable {
+    name  = "ResourceGroupName"
+    value = azurerm_resource_group.resourceGroups["hosting"].name
+  }
+
+  depends_on = [
+    module.front_door,
+    module.web_app,
+    azurerm_role_assignment.afd_private_endpoint_approver_contributor,
+  ]
+}
+
 module "application_gateway" {
   count  = local.use_application_gateway_ingress ? 1 : 0
   source = "./modules/application-gateway"
 
-  resource_group_name              = azurerm_resource_group.spoke.name
+  resource_group_name              = azurerm_resource_group.resourceGroups["networkEdge"].name
   system_abbreviation              = var.system_abbreviation
   environment_abbreviation         = var.environment_abbreviation
   instance_number                  = var.instance_number
@@ -268,7 +322,7 @@ module "application_gateway" {
 module "key_vault" {
   source = "./modules/key-vault"
 
-  resource_group_name                            = azurerm_resource_group.spoke.name
+  resource_group_name                            = azurerm_resource_group.resourceGroups["operations"].name
   system_abbreviation                            = var.system_abbreviation
   environment_abbreviation                       = var.environment_abbreviation
   instance_number                                = var.instance_number
@@ -287,6 +341,8 @@ module "key_vault" {
   keys                                           = var.key_vault_config.keys
   enable_default_private_endpoint                = local.private_networking_enabled
   default_private_endpoint_subnet_resource_id    = module.network.snet_pe_resource_id
+  private_endpoint_resource_group_name           = azurerm_resource_group.resourceGroups["network"].name
+  private_dns_zone_resource_group_name           = azurerm_resource_group.resourceGroups["network"].name
   default_private_dns_zone_virtual_network_links = local.private_dns_zone_virtual_network_links
   diagnostic_settings                            = var.key_vault_config.diagnosticSettings
   lock                                           = var.key_vault_config.lock
@@ -298,7 +354,7 @@ module "postgresql" {
   count  = var.deploy_postgresql ? 1 : 0
   source = "./modules/postgresql-flexible-server"
 
-  resource_group_name                    = azurerm_resource_group.spoke.name
+  resource_group_name                    = azurerm_resource_group.resourceGroups["data"].name
   system_abbreviation                    = var.system_abbreviation
   environment_abbreviation               = var.environment_abbreviation
   instance_number                        = var.instance_number
@@ -320,6 +376,7 @@ module "postgresql" {
   public_network_access                  = var.postgresql_config.publicNetworkAccess
   private_access_mode                    = var.postgresql_config.privateAccessMode
   delegated_subnet_resource_id           = local.postgresql_private_access_enabled ? module.network.snet_postgresql_resource_id : null
+  private_dns_zone_resource_group_name   = azurerm_resource_group.resourceGroups["network"].name
   private_dns_zone_virtual_network_links = local.private_dns_zone_virtual_network_links
   databases                              = var.postgresql_config.databases
   configurations                         = var.postgresql_config.configurations

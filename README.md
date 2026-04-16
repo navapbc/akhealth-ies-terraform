@@ -2,30 +2,30 @@
 
 This repo is configured to use an Azure Blob backend with the following values:
 
-- Resource group: `rg-iep-eus-dev-operations-01`
-- Storage account: `stiepeusdevtf001`
-- Container: `stc-iep-eus-dev-tfstate-001`
+- Resource group: `rg-iep-wus2-dev-operations-01`
+- Storage account: `stiepwus2devtf001`
+- Container: `stc-iep-wus2-dev-tfstate-001`
 - State key: `main.dev.tfstate`
 - Auth mode: Azure AD (`use_azuread_auth = true`)
 
 Backend setup script:
 
 az group create \
-  --name rg-iep-eus-dev-operations-01 \
-  --location eastus2
+  --name rg-iep-wus2-dev-operations-01 \
+  --location westus2
 
 az storage account create \
-  --name stiepeusdevtf001 \
-  --resource-group rg-iep-eus-dev-operations-01 \
-  --location eastus2 \
+  --name stiepwus2devtf001 \
+  --resource-group rg-iep-wus2-dev-operations-01 \
+  --location westus2 \
   --sku Standard_LRS \
   --kind StorageV2 \
   --allow-blob-public-access false \
   --min-tls-version TLS1_2
 
 az storage container create \
-  --name stc-iep-eus-dev-tfstate-001 \
-  --account-name stiepeusdevtf001 \
+  --name stc-iep-wus2-dev-tfstate-001 \
+  --account-name stiepwus2devtf001 \
   --auth-mode login
 
 Minimum role needed to store in storage account blobs
@@ -33,14 +33,14 @@ az role assignment create \
   --assignee-object-id \
   --assignee-principal-type User \
   --role "Storage Blob Data Contributor" \
-  --scope "/resource/path/to/storageAccount/providers/Microsoft.Storage/storageAccounts/stiepeusdevtf001"
+  --scope "/resource/path/to/storageAccount/providers/Microsoft.Storage/storageAccounts/stiepwus2devtf001"
 
 
 ## Usage
 
 ```bash
 terraform init -reconfigure
-terraform plan -var-file=environments/main.dev.tfvars
+terraform plan -var-file=params/main.dev.tfvars
 ```
 
 ## AzureRM Parity Notes
@@ -74,9 +74,6 @@ This repo tracks the Bicep implementation as closely as the AzureRM provider all
 - Web App `clientAffinityProxyEnabled`
 - Web App `clientAffinityPartitioningEnabled`
 - Web App `siteConfig.netFrameworkVersion`
-- The Bicep-only Front Door private endpoint auto-approval workflow that uses `Microsoft.Resources/deploymentScripts`
-
-The Front Door private endpoint auto-approval gap also means the supporting user-assigned identity and resource-group `Contributor` assignment used only by that deployment script are intentionally not created in this AzureRM-only translation. Terraform can still deploy the Front Door resources successfully, but private endpoint connection approval may remain a manual post-deploy step where that Bicep workflow would have auto-approved it.
 
 For Web Apps specifically, the remaining AzureRM parity gaps currently confirmed in this repo are `clientAffinityProxyEnabled`, `clientAffinityPartitioningEnabled`, and `siteConfig.netFrameworkVersion`. By contrast, `siteConfig.ftpsState`, `siteConfig.healthCheckPath`, `siteConfig.localMySqlEnabled`, and `siteConfig.minTlsVersion` are already modeled in Terraform and may still appear in ARM/Bicep `what-if` output as representation noise even when the live site matches the intended values.
 
@@ -96,12 +93,11 @@ resourceAbbreviation-systemAbbreviation-regionAbbreviation-environmentAbbreviati
 
 ## Resource Group Names Examples
 
-rg-iep-eus-dev-network-01
-rg-iep-eus-dev-network-edge-01
-rg-iep-eus-dev-network-private-01
-rg-iep-eus-dev-hosting-01
-rg-iep-eus-dev-data-01
-rg-iep-eus-dev-operations-01
+rg-iep-wus2-dev-network-01
+rg-iep-wus2-dev-network-edge-01
+rg-iep-wus2-dev-hosting-01
+rg-iep-wus2-dev-data-01
+rg-iep-wus2-dev-operations-01
 
 # Naming scheme
 
@@ -127,7 +123,7 @@ If naming is very restictive you may remove dashes. You may also remove region a
 
 When workloadDescription is not defined, the segment should be not included. It should not leave an empty segment or a double dash.
 
-example for this template set: kv-iep-wus-dev-001, app-iep-eus-dev-tasks-001
+example for this template set: kv-iep-wus-dev-001, app-iep-wus2-dev-tasks-001
 
 ## Naming implementation
 
@@ -160,15 +156,124 @@ For resource types that don't have an official CAF abbreviation, this repo uses 
 
 ## Resource Groups and Naming
 
+Terraform now mirrors the Bicep repo's explicit resource-group planning model. Define `resource_group_definitions` in `.tfvars` using the stable keys `network`, `networkEdge`, `hosting`, `data`, and `operations`, and let the root module derive final resource-group names from those definitions.
+
 For resource groups, we will break the scheme just a small bit, because resource groups are moreso containers and less dedicated resources.
 
 resourceAbbreviation-systemAbbreviation-regionAbbreviation-environmentAbbreviation-workloadDescription-subWorkloadDescription-instanceNumber
 
 ## Resource Group Names Examples
 
-rg-iep-eus-dev-network-01
-rg-iep-eus-dev-network-edge-01
-rg-iep-eus-dev-network-private-01
-rg-iep-eus-dev-hosting-01
-rg-iep-eus-dev-data-01
-rg-iep-eus-dev-operations-01
+rg-iep-wus2-dev-network-01
+rg-iep-wus2-dev-network-edge-01
+rg-iep-wus2-dev-hosting-01
+rg-iep-wus2-dev-data-01
+rg-iep-wus2-dev-operations-01
+
+## Resource Group Organizing
+
+`rg-iep-wus2-env-network-01`
+Base network and private connectivity resources:
+- Virtual Network
+- Subnets
+- NSGs
+- Route Tables
+- Private Endpoints
+- Private endpoint NICs
+- Private DNS zone groups and related private DNS resources
+
+`rg-iep-wus2-env-network-edge-01`
+Traffic entry and API access group:
+- Application Gateway
+- WAF policy resources
+- API Management
+- Load Balancer
+- Front Door and Front Door security resources
+
+`rg-iep-wus2-env-hosting-01`
+Primary workload hosting:
+- App Service Environment
+- App Service Plans
+- Web Apps and API Apps
+- Function Apps
+- Hosting-adjacent managed identities and runtime components
+
+`rg-iep-wus2-env-data-01`
+Persistent data group:
+- PostgreSQL
+- Storage Accounts
+- Redis
+- SQL
+- Cosmos DB
+- Data Factory
+- Data-oriented processing resources
+
+`rg-iep-wus2-env-operations-01`
+General support resource group:
+- Log Analytics
+- Application Insights
+- Alerts and monitor resources
+- Key Vault
+- Certificate and security support resources
+- Identity-adjacent support utilities
+
+Decision rule:
+Is this a base connectivity resource? `network`
+Is this a traffic entry or API access resource? `networkEdge`
+Is this where the main workload runs? `hosting`
+Is this where persistent or platform data lives? `data`
+Is this an operational, monitoring, diagnostics, security, identity, or other support resource? `operations`
+
+## Resource Placement Defaults
+
+Some resource types support multiple purposes, but still need a default home for consistency purposes.
+
+These defaults exist to reduce classification drift. Exceptions are allowed when there is a clear operational reason, but the default placement should be used unless the resource is clearly acting in another role.
+
+### Default by function
+
+- Virtual Network (`Microsoft.Network`): `network`
+- Subnets (`Microsoft.Network`): `network`
+- Network Security Groups (`Microsoft.Network`): `network`
+- Route Tables (`Microsoft.Network`): `network`
+- Private Endpoints (`Microsoft.Network`): `network`
+- Private DNS zone / private DNS networking objects (`Microsoft.Network`): `network`
+- Application Gateway (`Microsoft.Network`): `network-edge`
+- WAF Policy for Application Gateway (`Microsoft.Network`): `network-edge`
+- Load Balancer (`Microsoft.Network`): `network-edge`
+- API Management (`Microsoft.ApiManagement`): `network-edge`
+- App Service Environment (`Microsoft.Web`): `hosting`
+- App Service Plan (`Microsoft.Web`): `hosting`
+- App Service / Web App / API App (`Microsoft.Web`): `hosting`
+- Log Analytics Workspace (`Microsoft.OperationalInsights`): `operations`
+- Application Insights (`Microsoft.Insights`): `operations`
+- Azure Monitor alerting / monitor resources (`Microsoft.Insights` / `Microsoft.Monitor` / `Microsoft.AlertsManagement`): `operations`
+- Key Vault (`Microsoft.KeyVault`): `operations`
+- Managed Identity (`Microsoft.ManagedIdentity`): `operations`
+- Azure Automation / Runbooks (`Microsoft.Automation`): `operations`
+
+### Default placement by broad resource type
+
+These resource types are broad enough that placing them only by immediate use case can make the system harder to understand. They should have a stable default home.
+
+- Storage Account (`Microsoft.Storage`): `data`
+- Azure Database for PostgreSQL (`Microsoft.DBforPostgreSQL`): `data`
+- Azure Cache for Redis (`Microsoft.Cache`): `data`
+- Cosmos DB (`Microsoft.DocumentDB`): `data`
+- Azure Data Factory (`Microsoft.DataFactory`): `data`
+- Service Bus (`Microsoft.ServiceBus`): `hosting`
+- Event Grid (`Microsoft.EventGrid`): `hosting`
+- Azure Functions / Function App (`Microsoft.Web`): `hosting`
+- Logic Apps (`Microsoft.Logic`): `hosting`
+
+### Exceptions
+
+Exceptions should be made only when the resource is clearly operating in another role.
+
+Examples:
+- Azure Functions / Function App (`Microsoft.Web`): use `operations` when the function is clearly an admin or support automation component rather than a workload runtime.
+- Logic Apps (`Microsoft.Logic`): use `operations` when the logic app is clearly an admin or support automation component rather than workload orchestration.
+- Azure Data Factory (`Microsoft.DataFactory`): reconsider placement only if it becomes a distinct operations capability with its own operational boundary.
+- Service Bus (`Microsoft.ServiceBus`) / Event Grid (`Microsoft.EventGrid`): use `operations` only when they are clearly platform-admin or support messaging/eventing resources vs application runtime support.
+
+The goal is to keep placement predictable for admins while still allowing deliberate exceptions when a resource is clearly serving another role.

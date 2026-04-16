@@ -1,0 +1,110 @@
+[
+  {
+    "type": "Microsoft.Authorization/roleAssignments",
+    "count": 2
+  },
+  {
+    "type": "Microsoft.Cdn/profiles",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Cdn/profiles/afdEndpoints",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Cdn/profiles/afdEndpoints/routes",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Cdn/profiles/originGroups",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Cdn/profiles/originGroups/origins",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Cdn/profiles/securityPolicies",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.DBforPostgreSQL/flexibleServers/administrators",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Insights/components",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Insights/diagnosticSettings",
+    "count": 3
+  },
+  {
+    "type": "Microsoft.KeyVault/vaults",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Network/FrontDoorWebApplicationFirewallPolicies",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Network/networkSecurityGroups",
+    "count": 3
+  },
+  {
+    "type": "Microsoft.Network/privateDnsZones",
+    "count": 3
+  },
+  {
+    "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+    "count": 3
+  },
+  {
+    "type": "Microsoft.Network/privateEndpoints",
+    "count": 2
+  },
+  {
+    "type": "Microsoft.Network/virtualNetworks",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Network/virtualNetworks/subnets",
+    "count": 3
+  },
+  {
+    "type": "Microsoft.OperationalInsights/workspaces",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Resources/deploymentScripts",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Resources/resourceGroups",
+    "count": 5
+  },
+  {
+    "type": "Microsoft.Web/serverfarms",
+    "count": 1
+  },
+  {
+    "type": "Microsoft.Web/sites",
+    "count": 1
+  },
+  {
+    "type": "__inline_subnet_nsg_association__",
+    "count": 3
+  }
+]

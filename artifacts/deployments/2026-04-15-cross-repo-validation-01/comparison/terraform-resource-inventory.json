@@ -1,0 +1,317 @@
+[
+  {
+    "address": "azurerm_resource_deployment_script_azure_cli.afd_private_endpoint_auto_approval[0]",
+    "terraform_type": "azurerm_resource_deployment_script_azure_cli",
+    "normalized_type": "Microsoft.Resources/deploymentScripts",
+    "name": "script-iep-wus2-dev-afdapproval-005",
+    "resource_group_name": "rg-iep-wus2-dev-operations-005"
+  },
+  {
+    "address": "azurerm_resource_group.resourceGroups[\"data\"]",
+    "terraform_type": "azurerm_resource_group",
+    "normalized_type": "Microsoft.Resources/resourceGroups",
+    "name": "rg-iep-wus2-dev-data-005",
+    "resource_group_name": null
+  },
+  {
+    "address": "azurerm_resource_group.resourceGroups[\"hosting\"]",
+    "terraform_type": "azurerm_resource_group",
+    "normalized_type": "Microsoft.Resources/resourceGroups",
+    "name": "rg-iep-wus2-dev-hosting-005",
+    "resource_group_name": null
+  },
+  {
+    "address": "azurerm_resource_group.resourceGroups[\"network\"]",
+    "terraform_type": "azurerm_resource_group",
+    "normalized_type": "Microsoft.Resources/resourceGroups",
+    "name": "rg-iep-wus2-dev-network-005",
+    "resource_group_name": null
+  },
+  {
+    "address": "azurerm_resource_group.resourceGroups[\"networkEdge\"]",
+    "terraform_type": "azurerm_resource_group",
+    "normalized_type": "Microsoft.Resources/resourceGroups",
+    "name": "rg-iep-wus2-dev-network-edge-005",
+    "resource_group_name": null
+  },
+  {
+    "address": "azurerm_resource_group.resourceGroups[\"operations\"]",
+    "terraform_type": "azurerm_resource_group",
+    "normalized_type": "Microsoft.Resources/resourceGroups",
+    "name": "rg-iep-wus2-dev-operations-005",
+    "resource_group_name": null
+  },
+  {
+    "address": "azurerm_role_assignment.afd_private_endpoint_approver_contributor[0]",
+    "terraform_type": "azurerm_role_assignment",
+    "normalized_type": "Microsoft.Authorization/roleAssignments",
+    "name": null,
+    "resource_group_name": null
+  },
+  {
+    "address": "azurerm_user_assigned_identity.afd_private_endpoint_approver[0]",
+    "terraform_type": "azurerm_user_assigned_identity",
+    "normalized_type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+    "name": "id-iep-wus2-dev-afdprivateendpointapprover-005",
+    "resource_group_name": "rg-iep-wus2-dev-operations-005"
+  },
+  {
+    "address": "module.app_insights.azurerm_application_insights.this",
+    "terraform_type": "azurerm_application_insights",
+    "normalized_type": "Microsoft.Insights/components",
+    "name": "appi-iep-wus2-dev-005",
+    "resource_group_name": "rg-iep-wus2-dev-operations-005"
+  },
+  {
+    "address": "module.app_service_plan[0].azurerm_service_plan.this",
+    "terraform_type": "azurerm_service_plan",
+    "normalized_type": "Microsoft.Web/serverfarms",
+    "name": "asp-iep-wus2-dev-005",
+    "resource_group_name": "rg-iep-wus2-dev-hosting-005"
+  },
+  {
+    "address": "module.front_door[0].azurerm_cdn_frontdoor_endpoint.this[\"default\"]",
+    "terraform_type": "azurerm_cdn_frontdoor_endpoint",
+    "normalized_type": "Microsoft.Cdn/profiles/afdEndpoints",
+    "name": "fde-iep-global-dev-default-005",
+    "resource_group_name": null
+  },
+  {
+    "address": "module.front_door[0].azurerm_cdn_frontdoor_origin.this[\"app-default/app-default\"]",
+    "terraform_type": "azurerm_cdn_frontdoor_origin",
+    "normalized_type": "Microsoft.Cdn/profiles/originGroups/origins",
+    "name": "app-default",
+    "resource_group_name": null
+  },
+  {
+    "address": "module.front_door[0].azurerm_cdn_frontdoor_origin_group.this[\"app-default\"]",
+    "terraform_type": "azurerm_cdn_frontdoor_origin_group",
+    "normalized_type": "Microsoft.Cdn/profiles/originGroups",
+    "name": "app-default",
+    "resource_group_name": null
+  },
+  {
+    "address": "module.front_door[0].azurerm_cdn_frontdoor_profile.this",
+    "terraform_type": "azurerm_cdn_frontdoor_profile",
+    "normalized_type": "Microsoft.Cdn/profiles",
+    "name": "afd-iep-global-dev-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-edge-005"
+  },
+  {
+    "address": "module.front_door[0].azurerm_cdn_frontdoor_route.this[\"default/default\"]",
+    "terraform_type": "azurerm_cdn_frontdoor_route",
+    "normalized_type": "Microsoft.Cdn/profiles/afdEndpoints/routes",
+    "name": "default",
+    "resource_group_name": null
+  },
+  {
+    "address": "module.front_door_security_policy[0].azurerm_cdn_frontdoor_security_policy.this",
+    "terraform_type": "azurerm_cdn_frontdoor_security_policy",
+    "normalized_type": "Microsoft.Cdn/profiles/securityPolicies",
+    "name": "fdsecp-iep-wus2-dev-005",
+    "resource_group_name": null
+  },
+  {
+    "address": "module.front_door_waf_policy[0].azurerm_cdn_frontdoor_firewall_policy.this",
+    "terraform_type": "azurerm_cdn_frontdoor_firewall_policy",
+    "normalized_type": "Microsoft.Network/FrontDoorWebApplicationFirewallPolicies",
+    "name": "fdfpiepglobaldev005",
+    "resource_group_name": "rg-iep-wus2-dev-network-edge-005"
+  },
+  {
+    "address": "module.key_vault.azurerm_key_vault.this",
+    "terraform_type": "azurerm_key_vault",
+    "normalized_type": "Microsoft.KeyVault/vaults",
+    "name": "kv-iep-wus2-dev-005",
+    "resource_group_name": "rg-iep-wus2-dev-operations-005"
+  },
+  {
+    "address": "module.key_vault.azurerm_private_dns_zone.default[0]",
+    "terraform_type": "azurerm_private_dns_zone",
+    "normalized_type": "Microsoft.Network/privateDnsZones",
+    "name": "privatelink.vaultcore.azure.net",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.key_vault.azurerm_private_dns_zone_virtual_network_link.default[\"vnet-iep-wus2-dev-005\"]",
+    "terraform_type": "azurerm_private_dns_zone_virtual_network_link",
+    "normalized_type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+    "name": "vnet-iep-wus2-dev-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.key_vault.azurerm_private_endpoint.default[0]",
+    "terraform_type": "azurerm_private_endpoint",
+    "normalized_type": "Microsoft.Network/privateEndpoints",
+    "name": "pep-iep-wus2-dev-keyvault-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.log_analytics_workspace[0].azurerm_log_analytics_workspace.this",
+    "terraform_type": "azurerm_log_analytics_workspace",
+    "normalized_type": "Microsoft.OperationalInsights/workspaces",
+    "name": "log-iep-wus2-dev-005",
+    "resource_group_name": "rg-iep-wus2-dev-operations-005"
+  },
+  {
+    "address": "module.network.azurerm_network_security_group.appsvc[0]",
+    "terraform_type": "azurerm_network_security_group",
+    "normalized_type": "Microsoft.Network/networkSecurityGroups",
+    "name": "nsg-iep-wus2-dev-appservice-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.network.azurerm_network_security_group.postgresql[0]",
+    "terraform_type": "azurerm_network_security_group",
+    "normalized_type": "Microsoft.Network/networkSecurityGroups",
+    "name": "nsg-iep-wus2-dev-postgresql-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.network.azurerm_network_security_group.private_endpoint[0]",
+    "terraform_type": "azurerm_network_security_group",
+    "normalized_type": "Microsoft.Network/networkSecurityGroups",
+    "name": "nsg-iep-wus2-dev-privateendpoint-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.network.azurerm_subnet.app_service",
+    "terraform_type": "azurerm_subnet",
+    "normalized_type": "Microsoft.Network/virtualNetworks/subnets",
+    "name": "snet-iep-wus2-dev-appservice-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.network.azurerm_subnet.postgresql[0]",
+    "terraform_type": "azurerm_subnet",
+    "normalized_type": "Microsoft.Network/virtualNetworks/subnets",
+    "name": "snet-iep-wus2-dev-postgresql-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.network.azurerm_subnet.private_endpoint[0]",
+    "terraform_type": "azurerm_subnet",
+    "normalized_type": "Microsoft.Network/virtualNetworks/subnets",
+    "name": "snet-iep-wus2-dev-privateendpoint-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.network.azurerm_subnet_network_security_group_association.app_service",
+    "terraform_type": "azurerm_subnet_network_security_group_association",
+    "normalized_type": "__inline_subnet_nsg_association__",
+    "name": null,
+    "resource_group_name": null
+  },
+  {
+    "address": "module.network.azurerm_subnet_network_security_group_association.postgresql[0]",
+    "terraform_type": "azurerm_subnet_network_security_group_association",
+    "normalized_type": "__inline_subnet_nsg_association__",
+    "name": null,
+    "resource_group_name": null
+  },
+  {
+    "address": "module.network.azurerm_subnet_network_security_group_association.private_endpoint[0]",
+    "terraform_type": "azurerm_subnet_network_security_group_association",
+    "normalized_type": "__inline_subnet_nsg_association__",
+    "name": null,
+    "resource_group_name": null
+  },
+  {
+    "address": "module.network.azurerm_virtual_network.this",
+    "terraform_type": "azurerm_virtual_network",
+    "normalized_type": "Microsoft.Network/virtualNetworks",
+    "name": "vnet-iep-wus2-dev-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.postgresql[0].azurerm_postgresql_flexible_server.this",
+    "terraform_type": "azurerm_postgresql_flexible_server",
+    "normalized_type": "Microsoft.DBforPostgreSQL/flexibleServers",
+    "name": "psqlfx-iep-wus2-dev-postgresql-005",
+    "resource_group_name": "rg-iep-wus2-dev-data-005"
+  },
+  {
+    "address": "module.postgresql[0].azurerm_postgresql_flexible_server_active_directory_administrator.this",
+    "terraform_type": "azurerm_postgresql_flexible_server_active_directory_administrator",
+    "normalized_type": "Microsoft.DBforPostgreSQL/flexibleServers/administrators",
+    "name": null,
+    "resource_group_name": "rg-iep-wus2-dev-data-005"
+  },
+  {
+    "address": "module.postgresql[0].azurerm_postgresql_flexible_server_database.this[\"appdb\"]",
+    "terraform_type": "azurerm_postgresql_flexible_server_database",
+    "normalized_type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+    "name": "appdb",
+    "resource_group_name": null
+  },
+  {
+    "address": "module.postgresql[0].azurerm_private_dns_zone.this[0]",
+    "terraform_type": "azurerm_private_dns_zone",
+    "normalized_type": "Microsoft.Network/privateDnsZones",
+    "name": "pdz-iep-wus2-dev-postgresql-005.postgres.database.azure.com",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.postgresql[0].azurerm_private_dns_zone_virtual_network_link.this[\"vnet-iep-wus2-dev-005\"]",
+    "terraform_type": "azurerm_private_dns_zone_virtual_network_link",
+    "normalized_type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+    "name": "vnet-iep-wus2-dev-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.web_app.azurerm_private_dns_zone.default[0]",
+    "terraform_type": "azurerm_private_dns_zone",
+    "normalized_type": "Microsoft.Network/privateDnsZones",
+    "name": "privatelink.azurewebsites.net",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.web_app.azurerm_private_dns_zone_virtual_network_link.default[\"vnet-iep-wus2-dev-005\"]",
+    "terraform_type": "azurerm_private_dns_zone_virtual_network_link",
+    "normalized_type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+    "name": "vnet-iep-wus2-dev-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.web_app.azurerm_private_endpoint.default[0]",
+    "terraform_type": "azurerm_private_endpoint",
+    "normalized_type": "Microsoft.Network/privateEndpoints",
+    "name": "pep-iep-wus2-dev-appservice-005",
+    "resource_group_name": "rg-iep-wus2-dev-network-005"
+  },
+  {
+    "address": "module.web_app.azurerm_windows_web_app.this[0]",
+    "terraform_type": "azurerm_windows_web_app",
+    "normalized_type": "Microsoft.Web/sites",
+    "name": "app-iep-wus2-dev-005",
+    "resource_group_name": "rg-iep-wus2-dev-hosting-005"
+  },
+  {
+    "address": "module.network.module.nsg_diagnostic_settings[\"nsg-iep-wus2-dev-appservice-005\"].azurerm_monitor_diagnostic_setting.this[\"nsg-iep-wus2-dev-appservice-005-diagnosticSettings\"]",
+    "terraform_type": "azurerm_monitor_diagnostic_setting",
+    "normalized_type": "Microsoft.Insights/diagnosticSettings",
+    "name": "nsg-iep-wus2-dev-appservice-005-diagnosticSettings",
+    "resource_group_name": null
+  },
+  {
+    "address": "module.network.module.nsg_diagnostic_settings[\"nsg-iep-wus2-dev-postgresql-005\"].azurerm_monitor_diagnostic_setting.this[\"nsg-iep-wus2-dev-postgresql-005-diagnosticSettings\"]",
+    "terraform_type": "azurerm_monitor_diagnostic_setting",
+    "normalized_type": "Microsoft.Insights/diagnosticSettings",
+    "name": "nsg-iep-wus2-dev-postgresql-005-diagnosticSettings",
+    "resource_group_name": null
+  },
+  {
+    "address": "module.network.module.nsg_diagnostic_settings[\"nsg-iep-wus2-dev-privateendpoint-005\"].azurerm_monitor_diagnostic_setting.this[\"nsg-iep-wus2-dev-privateendpoint-005-diagnosticSettings\"]",
+    "terraform_type": "azurerm_monitor_diagnostic_setting",
+    "normalized_type": "Microsoft.Insights/diagnosticSettings",
+    "name": "nsg-iep-wus2-dev-privateendpoint-005-diagnosticSettings",
+    "resource_group_name": null
+  },
+  {
+    "address": "module.postgresql[0].module.role_assignments.azurerm_role_assignment.this[\"app-service-reader\"]",
+    "terraform_type": "azurerm_role_assignment",
+    "normalized_type": "Microsoft.Authorization/roleAssignments",
+    "name": null,
+    "resource_group_name": null
+  }
+]

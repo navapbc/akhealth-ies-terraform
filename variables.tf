@@ -67,10 +67,49 @@ variable "tags" {
   description = "Tags applied to resources."
 }
 
+variable "resource_group_definitions" {
+  type = list(object({
+    key                    = string
+    workloadDescription    = string
+    subWorkloadDescription = optional(string)
+  }))
+  description = "Definitions of the solution-managed resource groups keyed by category."
+
+  validation {
+    condition = (
+      length(var.resource_group_definitions) == length(distinct([
+        for definition in var.resource_group_definitions :
+        definition.key
+      ])) &&
+      length(setsubtract(
+        toset([for definition in var.resource_group_definitions : definition.key]),
+        toset(["network", "networkEdge", "hosting", "data", "operations"])
+      )) == 0 &&
+      length(setsubtract(
+        toset(["network", "networkEdge", "hosting", "data", "operations"]),
+        toset([for definition in var.resource_group_definitions : definition.key])
+      )) == 0
+    )
+    error_message = "resource_group_definitions must contain exactly one entry for each required key: network, networkEdge, hosting, data, and operations."
+  }
+
+  validation {
+    condition = alltrue([
+      for definition in var.resource_group_definitions :
+      trimspace(definition.workloadDescription) != "" &&
+      (
+        definition.subWorkloadDescription == null ||
+        trimspace(definition.subWorkloadDescription) != ""
+      )
+    ])
+    error_message = "Each resource_group_definitions entry must declare a non-empty workloadDescription, and subWorkloadDescription must be omitted or non-empty."
+  }
+}
+
 variable "existing_log_analytics_id" {
   type        = string
   default     = null
-  description = "Optional existing Log Analytics workspace resource ID."
+  description = "Optional existing Log Analytics workspace resource ID. When omitted, Terraform creates the workspace in the operations resource group."
 
   validation {
     condition     = var.existing_log_analytics_id == null || trimspace(var.existing_log_analytics_id) != ""
@@ -663,6 +702,8 @@ variable "front_door_config" {
     managedIdentities = object({
       systemAssigned = bool
     })
+    autoApprovePrivateEndpoint    = optional(bool, false)
+    afdPeAutoApproverIsolationScope = optional(string)
     enableDefaultWafMethodBlock = bool
     wafCustomRules = optional(list(object({
       name                       = string
@@ -817,6 +858,14 @@ variable "front_door_config" {
       ]
     ]))
     error_message = "Each Front Door route must reference an origin group declared in front_door_config.originGroups."
+  }
+
+  validation {
+    condition = (
+      var.front_door_config.afdPeAutoApproverIsolationScope == null ||
+      contains(["None", "Regional"], var.front_door_config.afdPeAutoApproverIsolationScope)
+    )
+    error_message = "front_door_config.afdPeAutoApproverIsolationScope must be one of None or Regional when provided."
   }
 }
 

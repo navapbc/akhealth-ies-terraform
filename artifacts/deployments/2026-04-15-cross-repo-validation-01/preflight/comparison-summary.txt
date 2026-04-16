@@ -1,0 +1,15 @@
+Terraform validation:
+- validate: Success
+- plan: 45 to add, 0 to change, 0 to destroy
+
+Bicep validation:
+- build: Success
+- deployment validate: Succeeded
+- what-if: 45 creates, 0 no-change, 1 unsupported
+
+Comparison:
+- Core create coverage is aligned at 45 planned creates on both sides.
+- The remaining Bicep unsupported item is the hosting-scope role assignment for the AFD private endpoint auto-approver identity.
+- Terraform models that role assignment explicitly, while Bicep what-if cannot fully analyze it because the role assignment ID depends on deployment-time identity resolution.
+- Bicep surfaces Microsoft.Web/sites/basicPublishingCredentialsPolicies and private endpoint privateDnsZoneGroups as child resources; Terraform models those behaviors inline on the parent resources.
+- Terraform surfaces subnet-to-NSG associations as separate resources; Bicep folds that association into the subnet resource shape.
