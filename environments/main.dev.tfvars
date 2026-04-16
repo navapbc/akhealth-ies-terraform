@@ -3,7 +3,7 @@ location                  = "westus2"
 environment_name          = "dev"
 system_abbreviation       = "iep"
 environment_abbreviation  = "dev"
-instance_number           = "004"
+instance_number           = "005"
 workload_description      = null
 existing_log_analytics_id = null
 
