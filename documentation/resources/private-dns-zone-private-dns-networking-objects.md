@@ -2,25 +2,25 @@
 
 - **Resource provider**: `Microsoft.Network`
 
-## Region considerations
-
-- Region selection matters indirectly because private DNS zones are typically global in control plane terms but are consumed through regional virtual networks and private access designs. West US 2 and West Central US both need to be accounted for in the DNS linking strategy.
-- Availability zones are not a direct concern for private DNS zones.
-- Paired-region and DR considerations are important because name resolution often breaks failover plans before compute or data services do.
-- Service-by-service regional validation is required for private endpoint DNS patterns, service-specific naming rules, and how secondary-region resources should resolve.
-- Feature parity should not be assumed between primary and secondary regions for the services that depend on private DNS resolution, even if the DNS objects themselves are not region-bound in the same way.
-
 ## Purpose in the IEP
 
-Private DNS networking objects provide the internal name-resolution layer for private endpoints and other private service access patterns. They become important when the platform relies heavily on private connectivity across Azure-managed services.
+Private DNS networking objects provide the internal name-resolution layer for private endpoints and other private service access patterns.
 
-## Key design considerations
+## Region considerations
 
-- Decide whether private DNS will be centrally managed or segmented by service boundary.
+- Region selection matters: indirectly because private DNS zones are typically global in control plane terms but are consumed through regional virtual networks and private access designs. West US 2 and West Central US both need to be accounted for in the DNS linking strategy.
+- Availability zones: are not a direct concern for private DNS zones.
+- Paired region and DR considerations: are important because name resolution often breaks failover plans before compute or data services do.
+- Service by service regional validation: is required for private endpoint DNS patterns, service-specific naming rules, and how secondary-region resources should resolve.
+- Feature parity: should not be assumed between primary and secondary regions for the services that depend on private DNS resolution, even if the DNS objects themselves are not region-bound in the same way.
+
+## Design considerations
+
+- Decide whether private DNS will be centrally managed (likely) or segmented by service boundary.
 - Plan zone linking across both West US 2 and West Central US virtual networks.
-- Validate DNS requirements for every private endpoint-enabled service before deployment.
+- Validate DNS requirements for every private endpoint enabled service before deployment.
 - Keep DNS ownership and change control clear because it affects many teams at once.
-- Avoid unnecessary DNS complexity if only a small number of private endpoints are in use initially.
+- Avoid additional DNS complexity if only a small number of private endpoints are in use initially.
 
 ## Security considerations
 
@@ -30,7 +30,7 @@ Private DNS networking objects provide the internal name-resolution layer for pr
 
 - Stub for potential use later.
 
-## Dependencies and relationships
+## Dependencies and related resources
 
 - Virtual Network
 - Private Endpoints
@@ -41,7 +41,6 @@ Private DNS networking objects provide the internal name-resolution layer for pr
 
 ## Open questions
 
-- Will private DNS be required at launch or only after more private endpoints are introduced?
 - Which services in scope need private DNS records immediately?
 - How will DNS zones be linked across West US 2 and West Central US virtual networks?
 - Who owns private DNS changes and incident response?
@@ -54,5 +53,3 @@ Private DNS networking objects provide the internal name-resolution layer for pr
 - [Microsoft Learn: Azure availability zones overview](https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview)
 
 ## Notes
-
-- Introduce this resource when private endpoint usage is substantial enough that ad hoc DNS handling becomes risky or unmanageable.

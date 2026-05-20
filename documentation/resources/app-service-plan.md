@@ -2,19 +2,19 @@
 
 - **Resource provider**: `Microsoft.Web`
 
-## Region considerations
-
-- Region selection matters because App Service Plans are regional compute containers for Microsoft.Web workloads. West US 2 is the likely primary placement, and West Central US would need its own plans if DR hosting is implemented there.
-- Availability zones are not typically managed directly at the App Service Plan layer in the same way as other services, so resiliency depends largely on the ASE and regional hosting design.
-- Paired-region and DR considerations are relevant because plan capacity and scale settings do not transfer automatically across regions.
-- Service-by-service regional validation is required for supported SKUs, ASE alignment, quotas, and any regional hosting constraints.
-- Feature parity should not be assumed between West US 2 and West Central US for scale options, quotas, or related Microsoft.Web features.
-
 ## Purpose in the IEP
 
-The App Service Plan provides the compute and scaling boundary for App Services and, where applicable, Function Apps running in the ASE-hosted platform.
+The App Service Plan provides the compute and scaling boundary for App Services and, where applicable, Function Apps running in the app service environment hosted platform.
 
-## Key design considerations
+## Region considerations
+
+- Region selection: matters because App Service Plans are regional compute containers for Microsoft.Web workloads. West US 2 is the likely primary placement, and West Central US would need its own plans if DR hosting is implemented there.
+- Availability zones: are not typically managed directly at the App Service Plan layer in the same way as other services, so resiliency depends largely on the ASE and regional hosting design.
+- Paired-region and DR considerations: are relevant because plan capacity and scale settings do not transfer automatically across regions.
+- Instance by instance regional validation: is required for supported SKUs, ASE alignment, quotas, and any regional hosting constraints.
+- Feature parity: should not be assumed between West US 2 and West Central US for scale options, quotas, or related Microsoft.Web features.
+
+## Design considerations
 
 - Decide how to segment workloads across plans for isolation, cost, and scaling independence.
 - Align plan sizing with application runtime characteristics, not only initial traffic.
@@ -30,7 +30,7 @@ The App Service Plan provides the compute and scaling boundary for App Services 
 
 - Stub for potential use later.
 
-## Dependencies and relationships
+## Dependencies and related resources
 
 - App Service Environment
 - App Service / Web App / API App

@@ -2,25 +2,25 @@
 
 - **Resource provider**: `Microsoft.Web`
 
-## Region considerations
-
-- Region selection matters because Function Apps are regional workloads. West US 2 is the likely primary deployment region, and West Central US should be treated as a separate secondary hosting target if DR or regional failover is required.
-- Availability zones are not generally handled directly at the function app resource level, so resiliency depends on the underlying hosting design and supporting services.
-- Paired-region and DR considerations are important because event sources, storage dependencies, and trigger behavior need explicit regional design.
-- Service-by-service regional validation is required for Microsoft.Web function capabilities, storage dependencies, networking behavior, and supported hosting patterns in both regions.
-- Feature parity should not be assumed between West US 2 and West Central US, especially where runtime features or scale characteristics vary by region.
-
 ## Purpose in the IEP
 
-Function Apps provide event-driven and integration-focused compute for the platform. They are a natural fit for background processing, message handling, scheduled tasks, and workflow steps in an environment expected to become increasingly integration-heavy over time.
+Function Apps provide event/integration specific compute for the platform. Best used for background processing, message handling, scheduled tasks, and workflow steps in an environment with high integration needs expectations over time.
 
-## Key design considerations
+## Region considerations
 
-- Align trigger design with Service Bus, Event Grid, Storage, or timer-based processing patterns.
-- Plan cold-start, concurrency, and scaling behavior according to workload criticality.
-- Use managed identity, Key Vault, and private network access for dependent services.
-- Ensure hosting and configuration are compatible with ASE-based, private-first constraints.
-- Design DR carefully so triggers, queues, and event subscriptions do not double-process or silently stop during regional failover.
+- Region selection: matters because Function Apps are regional workloads. West US 2 is the likely primary deployment region, and West Central US should be treated as a separate secondary hosting target if DR or regional failover is required.
+- Availability zones: not generally handled at the function app resource level.
+- Paired-region and DR: considerations are important because event sources, storage dependencies, and trigger behavior need explicit regional design.
+- Instance by instance regional validation: is required for Microsoft.Web function capabilities, storage dependencies, networking behavior, and supported hosting patterns in both regions.
+- Feature parity between regions: should not be assumed between West US 2 and West Central US, especially where runtime features or scale characteristics vary by region.
+
+## Design considerations
+
+- Align trigger design with Service Bus, Event Grid, Storage, or timer-based configs where applicable.
+- Plan cold-start, concurrency, and scaling behavior based on workload criticality.
+- Use managed identity/Key Vault/private networking for dependent services.
+- Ensure hosting and configuration are compatible with app service environment based/private networking first constraints.
+- Consider DR plans carefully so triggers, queues, and event subscriptions do not double process or silently stop during regional failover.
 
 ## Security considerations
 
@@ -30,7 +30,7 @@ Function Apps provide event-driven and integration-focused compute for the platf
 
 - Stub for potential use later.
 
-## Dependencies and relationships
+## Dependencies and related resources
 
 - App Service Environment
 - App Service Plan
@@ -42,7 +42,6 @@ Function Apps provide event-driven and integration-focused compute for the platf
 ## Open questions
 
 - Which workloads are best handled as functions instead of long-running web services?
-- Which triggers will be used at launch, and how are retries or dead-letter flows handled?
 - Do any function workloads require dedicated compute isolation from other Microsoft.Web apps?
 - How will image-based function deployments be promoted and recovered across regions?
 - What regional failover behavior is required for event-driven processing in West Central US?
@@ -54,5 +53,3 @@ Function Apps provide event-driven and integration-focused compute for the platf
 - [Microsoft Learn: Azure availability zones overview](https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview)
 
 ## Notes
-
-- Function Apps are often the fastest path to growing integration capability, but they still need disciplined DR and security design.

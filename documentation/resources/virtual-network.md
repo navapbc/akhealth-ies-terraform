@@ -2,6 +2,10 @@
 
 - **Resource provider**: `Microsoft.Network`
 
+## Purpose in the IEP
+
+The virtual network provides the core private network boundary for the environment. In this private-first architecture, it is the foundation for ASE-hosted applications, private endpoints, segmented subnets, and controlled east-west and north-south traffic paths.
+
 ## Region considerations
 
 - Region selection matters because the virtual network is the regional network boundary for the platform. West US 2 is the likely primary deployment region, and West Central US should be planned as a separate secondary or DR network footprint rather than an extension of the primary network.
@@ -10,11 +14,7 @@
 - Service-by-service regional validation is still required because private networking features, quota availability, and dependent platform services may differ between West US 2 and West Central US.
 - Feature parity should not be assumed between primary and secondary regions, especially for zonal services, private access patterns, and service capacity.
 
-## Purpose in the IEP
-
-The virtual network provides the core private network boundary for the environment. In this private-first architecture, it is the foundation for ASE-hosted applications, private endpoints, segmented subnets, and controlled east-west and north-south traffic paths.
-
-## Key design considerations
+## Design considerations
 
 - Reserve enough address space for the App Service Environment, application subnets, private endpoints, and future integration-heavy growth.
 - Keep subnet allocation structured so primary and DR regions can be mapped consistently.
@@ -43,7 +43,6 @@ The virtual network provides the core private network boundary for the environme
 
 - What address space is required for West US 2 at day one and for long-term expansion?
 - How closely should West Central US mirror the primary network layout for DR?
-- Will the environment use a flat network, hub-and-spoke, or another segmentation model?
 - What egress controls and route inspection points are required?
 - Which services must be reachable only through private paths inside the network?
 
@@ -54,5 +53,3 @@ The virtual network provides the core private network boundary for the environme
 - [Microsoft Learn: Azure availability zones overview](https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview)
 
 ## Notes
-
-- This page assumes the network is being designed around an ASE-centric hosting model rather than public multi-tenant App Service.

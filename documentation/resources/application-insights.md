@@ -2,19 +2,19 @@
 
 - **Resource provider**: `Microsoft.Insights`
 
-## Region considerations
-
-- Region selection matters because Application Insights stores application telemetry in a regional context, usually through a workspace-based design. West US 2 is the likely primary telemetry region, and West Central US should be considered for secondary-region observability planning.
-- Availability zones are not typically a direct feature consideration for Application Insights.
-- Paired-region and DR considerations are relevant because application observability must continue to work when workloads fail over or run in both regions.
-- Service-by-service regional validation is required for workspace-based configuration, ingestion behavior, and cross-region telemetry routing expectations.
-- Feature parity should not be assumed between West US 2 and West Central US for all telemetry features or regional rollout timing.
-
 ## Purpose in the IEP
 
-Application Insights provides application-level telemetry for web apps, APIs, and functions. It helps teams understand performance, failures, dependency behavior, and user-facing reliability across the ASE-hosted application estate.
+Application Insights provides app. level telemetry for web apps, APIs, and functions. It helps communicate app. performance, failures, dependency behavior, and reliability issues across the app service environment hosted application.
 
-## Key design considerations
+## Region considerations
+
+- Region selection: matters because Application Insights stores application telemetry in a regional context, usually through a workspace-based design. West US 2 is the likely primary telemetry region, and West Central US should be considered for secondary-region observability planning.
+- Availability zones: are not typically a direct feature consideration for Application Insights.
+- Paired-region and DR considerations: are relevant because application observability must continue to work when workloads fail over or run in both regions.
+- Instance by instance regional validation: is required for workspace-based configuration, ingestion behavior, and cross-region telemetry routing expectations.
+- Feature parity: should not be assumed between West US 2 and West Central US for all telemetry features or regional rollout timing.
+
+## Design considerations
 
 - Standardize telemetry configuration across App Services and Function Apps.
 - Decide what level of sampling is acceptable for cost versus diagnostic fidelity.
@@ -30,7 +30,7 @@ Application Insights provides application-level telemetry for web apps, APIs, an
 
 - Stub for potential use later.
 
-## Dependencies and relationships
+## Dependencies and related resources
 
 - Log Analytics Workspace
 - App Service / Web App / API App
@@ -54,5 +54,3 @@ Application Insights provides application-level telemetry for web apps, APIs, an
 - [Microsoft Learn: Azure availability zones overview](https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview)
 
 ## Notes
-
-- Application Insights is most effective when instrumentation standards are treated as part of the platform contract, not as optional app-level extras.

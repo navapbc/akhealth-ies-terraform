@@ -2,19 +2,20 @@
 
 - **Resource provider**: `Microsoft.KeyVault`
 
-## Region considerations
-
-- Region selection matters strongly because Key Vault is a regional dependency for secrets, keys, and certificates. West US 2 is the likely primary vault region, and West Central US should be planned explicitly if secondary-region workloads need local or independent secret access.
-- Availability zones are not usually the primary design concern for standard vault planning, but service resiliency in-region still matters.
-- Paired-region and DR considerations are significant because secret availability, certificate continuity, and recovery workflows must work during regional failover.
-- Service-by-service regional validation is required for private networking, certificate features, key management options, and regional service support in both target regions.
-- Feature parity should not be assumed between West US 2 and West Central US for all vault-related capabilities or operational limits.
-
 ## Purpose in the IEP
 
-Key Vault provides centralized secret, key, and certificate storage for the platform. It is a core control for keeping sensitive material out of application code, deployment artifacts, and shared configuration.
+Key Vault provides centralized secret, key, and certificate storage for the platform.
 
-## Key design considerations
+
+## Region considerations
+
+- Region selection: matters strongly because Key Vault is a regional dependency for secrets, keys, and certificates. West US 2 is the likely primary vault region, and West Central US should be planned explicitly if secondary-region workloads need local or independent secret access.
+- Availability zones: are not usually the primary design concern for standard vault planning, but service resiliency in-region still matters.
+- Paired-region and DR considerations: are significant because secret availability, certificate continuity, and recovery workflows must work during regional failover.
+- Service-by-service regional validation: is required for private networking, certificate features, key management options, and regional service support in both target regions.
+- Feature parity: should not be assumed between West US 2 and West Central US for all vault-related capabilities or operational limits.
+
+## Design considerations
 
 - Decide whether one shared vault or multiple vaults are needed for isolation boundaries.
 - Use private access and managed identity to align with the private-first platform model.
@@ -54,5 +55,3 @@ Key Vault provides centralized secret, key, and certificate storage for the plat
 - [Microsoft Learn: Azure availability zones overview](https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview)
 
 ## Notes
-
-- In a private-first platform, Key Vault usually becomes one of the most security-reviewed shared services, so simplicity and consistent access patterns matter.

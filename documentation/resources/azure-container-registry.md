@@ -2,25 +2,24 @@
 
 - **Resource provider**: `Microsoft.ContainerRegistry`
 
-## Region considerations
-
-- Region selection matters strongly because the registry is a regional dependency for image storage and pull performance. West US 2 is the likely primary registry region, and West Central US should be evaluated as a secondary replication or standby location for DR.
-- Availability zones are not the primary design lever for this service, but regional resiliency and image availability remain important.
-- Paired-region and DR considerations are significant because App Services and Function Apps hosted from registry images depend on image availability during deployment and recovery.
-- Service-by-service regional validation is required for SKU support, private networking, geo-replication options, and regional capacity expectations.
-- Feature parity should not be assumed between West US 2 and West Central US, particularly for replication features and private access behavior.
-
 ## Purpose in the IEP
 
 Azure Container Registry stores the container images used by App Services and Function Apps in the Microsoft.Web hosting estate. It is the central artifact repository for the platform's container-based deployment model.
 
-## Key design considerations
+## Region considerations
+
+- Region selection: matters strongly because the registry is a regional dependency for image storage and pull performance. West US 2 is the likely primary registry region, and West Central US should be evaluated as a secondary replication or standby location for DR.
+- Availability zones: are not the primary concernfor this service, but regional resiliency and image availability are still important.
+- Paired-region and DR considerations: are important because App Services and Function Apps hosted from registry images depend on image availability during deployment and recovery.
+- Service by service regional validation: is required for SKU support, private networking, geo-replication options, and regional capacity expectations.
+- Feature parity: should not be assumed between West US 2 and West Central US, particularly for replication features and private networking.
+
+## Design considerations
 
 - Decide whether a single primary registry is sufficient or whether regional replication is required for DR.
-- Use private access patterns so runtime image pulls stay aligned with the private-first architecture.
-- Plan image naming, tagging, retention, and promotion practices carefully.
-- Ensure Microsoft.Web workloads can authenticate to pull images without using shared credentials.
-- Validate registry access and latency expectations for West US 2 primary hosting and West Central US secondary hosting.
+- Use private networking services so runtime image pulls stay private.
+- Plan image naming, tagging, retention, and promotion practices.
+- Ensure Microsoft.Web workloads (app services) can auth to pull images without using shared credentials/using RBAC.
 
 ## Security considerations
 
@@ -30,7 +29,7 @@ Azure Container Registry stores the container images used by App Services and Fu
 
 - Stub for potential use later.
 
-## Dependencies and relationships
+## Dependencies and related resources
 
 - App Service / Web App / API App
 - Azure Functions / Function App

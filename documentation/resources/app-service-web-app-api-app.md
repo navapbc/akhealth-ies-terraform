@@ -2,19 +2,20 @@
 
 - **Resource provider**: `Microsoft.Web`
 
-## Region considerations
-
-- Region selection matters because App Services are regional workloads. West US 2 is the likely primary hosting region, and West Central US should be treated as a separate secondary deployment target if application DR is required.
-- Availability zones are not usually handled directly at the app resource layer, so resiliency depends more on the ASE, ingress design, and regional duplication strategy.
-- Paired-region and DR considerations are important because application instances, configuration, and deployment artifacts must be replicated deliberately across regions.
-- Service-by-service regional validation is required for Microsoft.Web features, deployment slots, networking behavior, and supported runtime capabilities in both target regions.
-- Feature parity should not be assumed between West US 2 and West Central US, particularly for newer hosting features or quota-sensitive capabilities.
-
 ## Purpose in the IEP
 
 App Service workloads host the platform's web applications and APIs. In this environment, they are expected to run inside the ASE and be deployed from Azure Container Registry images rather than from source packages directly.
 
-## Key design considerations
+## Region considerations
+
+- Region selection: matters because App Services are regional workloads. West US 2 is the likely primary hosting region, and West Central US should be treated as a separate secondary deployment target if application DR is required.
+- Availability zones: are not usually handled directly at the app resource layer, so resiliency depends more on the ASE, ingress design, and regional duplication strategy.
+- Paired-region and DR considerations: are important because application instances, configuration, and deployment artifacts must be replicated deliberately across regions.
+- Instance by instance regional validation is required for Microsoft.Web features, deployment slots, networking behavior, and supported runtime capabilities in both target regions.
+- Feature parity: should not be assumed between West US 2 and West Central US, particularly for newer hosting features or quota-sensitive capabilities.
+
+
+## Design considerations
 
 - Externalize state so applications can scale or fail over without depending on local instance state.
 - Align ingress with Application Gateway and, where appropriate, API Management.
@@ -30,7 +31,7 @@ App Service workloads host the platform's web applications and APIs. In this env
 
 - Stub for potential use later.
 
-## Dependencies and relationships
+## Dependencies and related resources
 
 - App Service Environment
 - App Service Plan
@@ -55,4 +56,4 @@ App Service workloads host the platform's web applications and APIs. In this env
 
 ## Notes
 
-- This page assumes containerized deployment from ACR is the standard hosting pattern for App Services in the platform.
+- This assumes containerized deployment from azure container registry is the standard for App Services in the platform.

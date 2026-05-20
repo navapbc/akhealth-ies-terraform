@@ -2,6 +2,10 @@
 
 - **Resource provider**: `Microsoft.Network`
 
+## Purpose in the IEP
+
+Application Gateway provides the L7 ingress tier for HTTP and HTTPS traffic into the platform. In this architecture, it is a likely control point for routing, TLS handling, and exposing ASE-hosted applications without making the application tier broadly public.
+
 ## Region considerations
 
 - Region selection matters strongly because Application Gateway is a regional ingress service. West US 2 is the likely primary ingress region, with West Central US requiring a separate deployment if DR or regional failover is expected.
@@ -10,11 +14,7 @@
 - Service-by-service regional validation is required for WAF v2 capabilities, zone support, private frontend needs, and any integration assumptions with the App Service Environment or API Management.
 - Feature parity should not be assumed between West US 2 and West Central US, especially for zone availability, capacity, and newer feature support.
 
-## Purpose in the IEP
-
-Application Gateway provides the L7 ingress tier for HTTP and HTTPS traffic into the platform. In this architecture, it is a likely control point for routing, TLS handling, and exposing ASE-hosted applications without making the application tier broadly public.
-
-## Key design considerations
+## Design considerations
 
 - Determine whether Application Gateway fronts direct web applications, API Management, or both.
 - Validate subnet sizing, dedicated placement, and network pathing inside the virtual network.
@@ -30,7 +30,7 @@ Application Gateway provides the L7 ingress tier for HTTP and HTTPS traffic into
 
 - Stub for potential use later.
 
-## Dependencies and relationships
+## Dependencies and related resources
 
 - Virtual Network
 - Subnets
@@ -54,5 +54,3 @@ Application Gateway provides the L7 ingress tier for HTTP and HTTPS traffic into
 - [Microsoft Learn: Azure availability zones overview](https://learn.microsoft.com/en-us/azure/reliability/availability-zones-overview)
 
 ## Notes
-
-- In an ASE-based platform, Application Gateway often becomes the most visible north-south control plane for both security and availability reviews.

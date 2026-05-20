@@ -2,19 +2,19 @@
 
 - **Resource provider**: `Microsoft.OperationalInsights`
 
-## Region considerations
-
-- Region selection matters because the workspace defines where much operational log data is stored and queried. West US 2 is the likely primary monitoring region, and West Central US should be considered if secondary-region isolation or DR observability is required.
-- Availability zones are not typically a direct planning feature for the workspace.
-- Paired-region and DR considerations are relevant because monitoring architecture must still work when workloads shift regions.
-- Service-by-service regional validation is required for workspace-linked services, data residency expectations, and cross-region ingestion patterns.
-- Feature parity should not be assumed between West US 2 and West Central US for all monitoring integrations or regional onboarding timelines.
-
 ## Purpose in the IEP
 
-The Log Analytics Workspace is the central store for platform logs, query-based monitoring, and many Azure Monitor integrations. It is the operational evidence base for troubleshooting, alerting, and security review.
+The Log Analytics Workspace is the central store for platform logs, query-based monitoring, and many Azure Monitor integrations. It is the platofrms evidence base for troubleshooting, alerting, and security review.
 
-## Key design considerations
+## Region considerations
+
+- Region selection: matters because the workspace defines where much operational log data is stored and queried. West US 2 is the likely primary monitoring region, and West Central US should be considered if secondary-region isolation or DR observability is required.
+- Availability zones: are not typically a direct planning feature for the workspace.
+- Paired region and DR considerations: are relevant because monitoring architecture must still work when workloads shift regions.
+- Service by service regional validation: is required for workspace-linked services, data residency expectations, and cross-region ingestion patterns.
+- Feature parity: should not be assumed between West US 2 and West Central US for all monitoring integrations or regional onboarding timelines.
+
+## Design considerations
 
 - Decide whether one shared workspace is sufficient or whether multiple workspaces are needed for isolation.
 - Set retention and access patterns based on operational and compliance needs.
@@ -30,7 +30,7 @@ The Log Analytics Workspace is the central store for platform logs, query-based 
 
 - Stub for potential use later.
 
-## Dependencies and relationships
+## Dependencies and related resources
 
 - Application Insights
 - Azure Monitor alerting / monitor resources
@@ -55,4 +55,4 @@ The Log Analytics Workspace is the central store for platform logs, query-based 
 
 ## Notes
 
-- Monitoring design is easiest to standardize early, before each service team chooses its own diagnostics pattern.
+- Standardize monitor design early.

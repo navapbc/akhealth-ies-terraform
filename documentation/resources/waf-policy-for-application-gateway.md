@@ -2,19 +2,19 @@
 
 - **Resource provider**: `Microsoft.Network`
 
-## Region considerations
-
-- Region selection matters through its association with regional Application Gateway deployments. West US 2 will likely host the primary WAF policy attachment points, and West Central US should have equivalent policy coverage if secondary ingress is deployed.
-- Availability zones are not a direct WAF policy feature, but zonal Application Gateway designs may influence policy deployment and testing strategy.
-- Paired-region and DR considerations are relevant because secondary-region ingress should not operate with weaker or inconsistent protections.
-- Service-by-service regional validation is required for managed rule set availability, exclusions behavior, and feature support where regional rollouts lag.
-- Feature parity should not be assumed between West US 2 and West Central US, so policy compatibility should be validated in both regions.
-
 ## Purpose in the IEP
 
 The WAF policy provides centralized HTTP request inspection and protection for workloads exposed through Application Gateway. It is the main L7 security enforcement layer for internet-facing or externally consumed application traffic.
 
-## Key design considerations
+## Region considerations
+
+- Region selection: matters through its association with regional Application Gateway deployments. West US 2 will likely host the primary WAF policy attachment points, and West Central US should have equivalent policy coverage if secondary ingress is deployed.
+- Availability zones: are not a direct WAF policy feature, but zonal Application Gateway designs may influence policy deployment and testing strategy.
+- Paired-region and DR considerations: are relevant because secondary-region ingress should not operate with weaker or inconsistent protections.
+- Service by service regional validation: is required for managed rule set availability, exclusions behavior, and feature support where regional rollouts lag.
+- Feature parity: should not be assumed between West US 2 and West Central US, so policy compatibility should be validated in both regions.
+
+## Design considerations
 
 - Decide whether one shared policy or multiple app-specific policies are needed.
 - Tune exclusions and custom rules carefully to avoid unnecessary production impact.
@@ -30,7 +30,7 @@ The WAF policy provides centralized HTTP request inspection and protection for w
 
 - Stub for potential use later.
 
-## Dependencies and relationships
+## Dependencies and related resources
 
 - Application Gateway
 - Log Analytics Workspace
@@ -53,4 +53,4 @@ The WAF policy provides centralized HTTP request inspection and protection for w
 
 ## Notes
 
-- This resource is only effective when it is managed as an actively tuned control, not as a one-time deployment artifact.
+- WAF requires active/ongoing management
