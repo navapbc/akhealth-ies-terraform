@@ -13,7 +13,7 @@ deploy_postgresql         = true
 tags = {
   environment = "dev"
   workload    = "456TRF"
-  managedBy   = "bicepparam"
+  managedBy   = "terraform"
 }
 
 resource_group_definitions = [

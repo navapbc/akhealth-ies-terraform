@@ -1,4 +1,3 @@
-workload_name             = "845FDA"
 location                  = "westus2"
 environment_name          = "dev"
 system_abbreviation       = "iep"
@@ -54,7 +53,6 @@ spoke_network_config = {
   encryption                        = false
   encryptionEnforcement             = "AllowUnencrypted"
   flowTimeoutInMinutes              = null
-  enableVmProtection                = false
   enablePrivateEndpointVNetPolicies = "Disabled"
   roleAssignments                   = []
   diagnosticSettings                = []

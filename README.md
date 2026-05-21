@@ -1,6 +1,6 @@
 # akhealth-ies-terraform
 
-This repo is configured to use an Azure Blob backend with the following values:
+This repo is configured to use an Azure Blob storage backend with these values:
 
 - Resource group: `rg-iep-wus2-dev-operations-01`
 - Storage account: `stiepwus2devtf001`
@@ -38,10 +38,9 @@ az role assignment create \
 
 ## Usage
 
-```bash
+bash
 terraform init -reconfigure
-terraform plan -var-file=params/main.dev.tfvars
-```
+terraform plan -var-file=environments/main.dev.tfvars
 
 ## AzureRM Parity Notes
 
@@ -74,6 +73,9 @@ This repo tracks the Bicep implementation as closely as the AzureRM provider all
 - Web App `clientAffinityProxyEnabled`
 - Web App `clientAffinityPartitioningEnabled`
 - Web App `siteConfig.netFrameworkVersion`
+- The Bicep-only Front Door private endpoint auto-approval workflow that uses `Microsoft.Resources/deploymentScripts`
+
+The Front Door private endpoint auto-approval gap also means the supporting user-assigned identity and resource-group `Contributor` assignment used only by that deployment script are intentionally not created in this AzureRM-only translation. Terraform can still deploy the Front Door resources successfully, but private endpoint connection approval may remain a manual post-deploy step where that Bicep workflow would have auto-approved it.
 
 For Web Apps specifically, the remaining AzureRM parity gaps currently confirmed in this repo are `clientAffinityProxyEnabled`, `clientAffinityPartitioningEnabled`, and `siteConfig.netFrameworkVersion`. By contrast, `siteConfig.ftpsState`, `siteConfig.healthCheckPath`, `siteConfig.localMySqlEnabled`, and `siteConfig.minTlsVersion` are already modeled in Terraform and may still appear in ARM/Bicep `what-if` output as representation noise even when the live site matches the intended values.
 
@@ -85,9 +87,9 @@ Terraform refactors also have a state-address concern that does not usually feel
 
 ## Operational Differences From Bicep
 
-- Strongly typed root and module contracts matter more than they may first appear to in Terraform. Loose `any` objects and `try(...)`-heavy patterns can hide intended state quickly and push mistakes later into plan/apply time.
+- Strongly typed root and module contracts matter more than they may first appear to in Terraform. Loose `any` objects and `try(...)` can hide intended state quickly and push mistakes later into plan/apply reviews.
 
-- Terraform offers stronger state and lifecycle tooling than Bicep for imports, drift management, and controlled refactors, but that extra control comes with extra operational complexity.
+- tf offers stronger state and lifecycle tooling than Bicep for imports, drift management, and controlled refactors. But, those extra features comes with extra operational complexity.
 
 resourceAbbreviation-systemAbbreviation-regionAbbreviation-environmentAbbreviation-workloadDescription-subWorkloadDescription-instanceNumber
 
@@ -101,7 +103,7 @@ rg-iep-wus2-dev-operations-01
 
 # Naming scheme
 
-Resource names should flow and be readable from broad resource type to specific instance:
+Resource names should flow and be readable from broad resource type on the left to specific instance on the right:
 
 1. resource abbreviation
 2. system abbreviation
@@ -129,7 +131,7 @@ example for this template set: kv-iep-wus-dev-001, app-iep-wus2-dev-tasks-001
 
 This template should keep naming consistent globally, while keeping final name creation close to the resource that owns the name.
 
-- Shared naming components should be declared explicitly in .bicepparams.
+- Shared naming components should be declared explicitly in .bicepparams. (e.g. environment abbreviation)
 - Shared naming components should flow through main into the modules that need them.
 - Resource abbreviations should stay local to the module that creates that specific resource.
 - Region abbreviation uses a shared map (because all resources are defined with a more fixed set of regions)
@@ -139,10 +141,10 @@ This keeps naming readable and predictable without adding an extra abstraction l
 
 ## Repo-Local Abbreviations
 
-Considerations: Use Microsoft CAF abbreviations where Microsoft publishes one. Microsoft mixes abbreviations for the Microsoft.CDN provider between cdnp, cdne, fde, and afd. They use fde to convery frontdoor product vs where i would prefer to be technically honest and convery the actual resource type (cdn). But, for end user legibility purposes, afd and fd are sufficiently communicative. 
+Considerations: Use the Microsoft Cloud Adoption Framework (CAF) abbreviations where Microsoft publishes one. Microsoft mixes abbreviations for the Microsoft.CDN provider between cdnp, cdne, fde, and afd. They use fde to convey frontdoor product vs where i would prefer to be technically honest and convey the actual resource type (cdn). But, for end user legibility purposes, afd and fd are sufficiently communicative. 
 
 
-For resource types that don't have an official CAF abbreviation, this repo uses the following local conventions:
+For resource types that don't have an official CAF abbreviation, this repo uses the following local naming conentions:
 
 - fdsecp for Microsoft.Cdn/profiles/securityPolicies
 - fder for Microsoft.Cdn/profiles/afdEndpoints/routes
@@ -156,7 +158,7 @@ For resource types that don't have an official CAF abbreviation, this repo uses 
 
 ## Resource Groups and Naming
 
-Terraform now mirrors the Bicep repo's explicit resource-group planning model. Define `resource_group_definitions` in `.tfvars` using the stable keys `network`, `networkEdge`, `hosting`, `data`, and `operations`, and let the root module derive final resource-group names from those definitions.
+Define `resource_group_definitions` in `.tfvars` using the stable key designations `network`, `networkEdge`, `hosting`, `data`, and `operations`, and let the root module derive final resource group names from those definitions.
 
 For resource groups, we will break the scheme just a small bit, because resource groups are moreso containers and less dedicated resources.
 
@@ -183,7 +185,7 @@ Base network and private connectivity resources:
 - Private DNS zone groups and related private DNS resources
 
 `rg-iep-wus2-env-network-edge-01`
-Traffic entry and API access group:
+Network traffic entry and API access group:
 - Application Gateway
 - WAF policy resources
 - API Management
@@ -196,10 +198,10 @@ Primary workload hosting:
 - App Service Plans
 - Web Apps and API Apps
 - Function Apps
-- Hosting-adjacent managed identities and runtime components
+- Hosting adjacent managed identities and runtime components
 
-`rg-iep-wus2-env-data-01`
-Persistent data group:
+`rg-iep-{regionAbbreviation}-{env}-data-01`
+Persistent data resource group:
 - PostgreSQL
 - Storage Accounts
 - Redis
@@ -208,7 +210,7 @@ Persistent data group:
 - Data Factory
 - Data-oriented processing resources
 
-`rg-iep-wus2-env-operations-01`
+`rg-iep-{regionAbbreviation}-{env}-operations-01`
 General support resource group:
 - Log Analytics
 - Application Insights
@@ -226,9 +228,9 @@ Is this an operational, monitoring, diagnostics, security, identity, or other su
 
 ## Resource Placement Defaults
 
-Some resource types support multiple purposes, but still need a default home for consistency purposes.
+Some resource types support multiple purposes but should still need a default rg home for consistency purposes.
 
-These defaults exist to reduce classification drift. Exceptions are allowed when there is a clear operational reason, but the default placement should be used unless the resource is clearly acting in another role.
+These defaults help reduce classification drift. Exceptions can be considered when there is a clear operational reason. Default placement should still be used unless the resource is clearly acting in another role.
 
 ### Default by function
 
@@ -254,7 +256,7 @@ These defaults exist to reduce classification drift. Exceptions are allowed when
 
 ### Default placement by broad resource type
 
-These resource types are broad enough that placing them only by immediate use case can make the system harder to understand. They should have a stable default home.
+These resource types are broad enough that placing them only by immediate use case can make the system harder to understand. They should have a stable default rg location.
 
 - Storage Account (`Microsoft.Storage`): `data`
 - Azure Database for PostgreSQL (`Microsoft.DBforPostgreSQL`): `data`
@@ -272,8 +274,8 @@ Exceptions should be made only when the resource is clearly operating in another
 
 Examples:
 - Azure Functions / Function App (`Microsoft.Web`): use `operations` when the function is clearly an admin or support automation component rather than a workload runtime.
-- Logic Apps (`Microsoft.Logic`): use `operations` when the logic app is clearly an admin or support automation component rather than workload orchestration.
-- Azure Data Factory (`Microsoft.DataFactory`): reconsider placement only if it becomes a distinct operations capability with its own operational boundary.
-- Service Bus (`Microsoft.ServiceBus`) / Event Grid (`Microsoft.EventGrid`): use `operations` only when they are clearly platform-admin or support messaging/eventing resources vs application runtime support.
+- Logic Apps (`Microsoft.Logic`): place in `operations` rg when the logic app is for an admin or support automation component vs for a workload need.
+- Azure Data Factory (`Microsoft.DataFactory`): reconsider placement only if it becomes a distinct operations capability/center with its own operational boundary.
+- Service Bus (`Microsoft.ServiceBus`) / Event Grid (`Microsoft.EventGrid`): use `operations` only when they are clearly platform admin or support messaging/eventing resources vs application runtime support.
 
-The goal is to keep placement predictable for admins while still allowing deliberate exceptions when a resource is clearly serving another role.
+The goal is to keep placement predictable while still allowing exceptions when a resource is serving another role.
